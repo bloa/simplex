@@ -1,0 +1,21 @@
+[project]
+name = "simplex"
+version = "0.1.0"
+description = "Simple Simplex solver"
+license = "MIT"
+authors = [
+  { name = "Aymeric Blot"},
+  { email = "aymeric.blot@univ-rennes.fr" },
+]
+readme = "README.md"
+homepage = "https://github.com/bloa/simplex"
+repository = "https://github.com/bloa/simplex"
+requires-python = ">=3.11"
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+norecursedirs = ["examples"]

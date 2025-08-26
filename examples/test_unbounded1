@@ -1,0 +1,6 @@
+max z = x1 + x2
+x1 <= 1
+x1, x2 >= 0
+
+# expected status = UNBOUNDED
+# expected z = inf
