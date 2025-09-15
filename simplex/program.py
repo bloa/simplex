@@ -449,24 +449,41 @@ class Program:
         if not self.tableau:
             self.do_tableau()
 
-        # search for artificial variables
+        # remove artificial variables
         coefs_obj = self.tableau.coefs_obj(self.tableau.basis)
-        artificials = [var for var in self.tableau.basis if coefs_obj[var] > 0]
-        if not artificials:
+        problematic = [var for var in self.tableau.basis if coefs_obj[var] > 0]
+        if problematic:
+            var_out = problematic[0]
+            # sanity check
+            if var_out not in self.artificial_variables:
+                msg = 'positive coeficient for non-artificial basic variable?!'
+                raise RuntimeError(msg)
+            print(f'Removing artificial {var_out} from basis')
+            candidates = self.tableau.aux_art_candidates(problematic)
+            row_out = self.tableau.row_for_basic(var_out)
+            coefs = self.tableau.aux_art_coefs(row_out, candidates)
+            print('    coefs:', *(f'{v}:{round(x, 8)}' for v, x in coefs.items()))
+            if tmp := [v for v in candidates if coefs[v] >= 0]:
+                var_in = min(tmp, key=lambda v: coefs[v])
+                print(f'    -> {var_in} replaces {var_out} (min positive ratio)')
+            else:
+                print('... none strictly positive')
+                self.summary['status'] = 'INFEASIBLE'
+                return
+            print('Pivoting...')
+            self.tableau.pivot(var_in, var_out)
             return
 
-        # sanity check
-        if artificials != self.artificial_variables:
-            msg = 'positive coeficient for non-artificial basic variable?!'
-            raise RuntimeError(msg)
-
-        # remove artificial variables
-        for var_out in artificials:
-            print(f'Removing artificial {var_out} from basis')
-            candidates = self.tableau.aux_art_candidates(artificials)
+        # cleanup remaining negative variables
+        coefs = self.tableau.coefs_column('')
+        problematic = [var for var in self.tableau.basis if coefs[var] < 0]
+        if problematic:
+            var_out = problematic[0]
+            print(f'Removing negative {var_out} from basis')
+            candidates = self.tableau.aux_art_candidates(problematic)
             row_out = self.tableau.row_for_basic(var_out)
             coefs = self.tableau.aux_art_coefs(row_out, candidates)
-            print('    coefs:', *(f'{v}:{x}' for v, x in coefs.items()))
+            print('    coefs:', *(f'{v}:{round(x, 8)}' for v, x in coefs.items()))
             if tmp := [v for v in candidates if coefs[v] >= 0]:
                 var_in = min(tmp, key=lambda v: coefs[v])
                 print(f'    -> {var_in} replaces {var_out} (min positive ratio)')
@@ -474,38 +491,29 @@ class Program:
                 print('... none strictly positive')
                 self.summary['status'] = 'INFEASIBLE'
                 return
+            print('Pivoting...')
             self.tableau.pivot(var_in, var_out)
-            print(self.tableau.to_dict())
-            print()
+            return
 
-        # cleanup remaining negative variables
+    def do_simplify_artificial(self):
+        if not self.artificial_variables:
+            return
+        # ensure everything is done
+        while True:
+            coefs_obj = self.tableau.coefs_obj(self.tableau.basis)
+            problematic = [var for var in self.tableau.basis if coefs_obj[var] > 0]
+            if not problematic:
+                break
+            self.do_simplex_prestep()
         while True:
             coefs = self.tableau.coefs_column('')
-            var_out = next((var for var in self.tableau.basis if coefs[var] < 0), None)
-            if var_out is None:
+            problematic = [var for var in self.tableau.basis if coefs[var] < 0]
+            if not problematic:
                 break
-            print(f'Removing negative {var_out} from basis')
-            candidates = self.tableau.aux_art_candidates(artificials)
-            row_out = self.tableau.row_for_basic(var_out)
-            coefs = self.tableau.aux_art_coefs(row_out, candidates)
-            print('    coefs:', *(f'{v}:{x}' for v, x in coefs.items()))
-            if tmp := [v for v in candidates if coefs[v] >= 0]:
-                var_in = min(tmp, key=lambda v: coefs[v])
-                print(f'    -> {var_in} replaces {var_out} (min positive ratio)')
-            else:
-                print('... none strictly positive')
-                self.summary['status'] = 'INFEASIBLE'
-                return
-            self.tableau.pivot(var_in, var_out)
-            print(self.tableau.to_dict())
-            print()
-
-        # simplify linear program
-        for var in artificials:
+            self.do_simplex_prestep()
+        # simplify
+        for var in self.artificial_variables:
             self.tableau.delete(var)
-        print('New simplified dictionary: (after artificial variable removal)')
-        print(self.tableau.to_dict())
-        print()
 
     def do_simplex_step(self):
         # look for artificial variables
@@ -522,7 +530,7 @@ class Program:
         print('Searching for a variable to enter the basis')
         candidates = [v for v in self.tableau.variables if v not in self.tableau.basis]
         coefs = self.tableau.coefs_obj_neg(candidates)
-        print('    coefs:', *(f'{v}:{x}' for v, x in coefs.items()))
+        print('    coefs:', *(f'{v}:{round(x, 8)}' for v, x in coefs.items()))
         var_in = max(candidates, key=lambda v: coefs[v])
         if coefs[var_in] <= 0:
             print('   ... none strictly positive')
@@ -535,7 +543,7 @@ class Program:
         col_var = self.tableau.coefs_column(var_in)
         candidates = [v for v in self.tableau.basis if col_var[v] != 0]
         coefs = {v: col_lit[v]/col_var[v] for v in candidates}
-        print('    coefs:', *(f'{v}:{x}' for v, x in coefs.items()))
+        print('    coefs:', *(f'{v}:{round(x, 8)}' for v, x in coefs.items()))
         if tmp := [v for v in candidates if coefs[v] >= 0]:
             var_out = min(tmp, key=lambda v: coefs[v])
             print(f'    -> {var_out} (min positive ratio)')
@@ -544,11 +552,8 @@ class Program:
             self.summary['status'] = 'UNBOUNDED'
             return
 
-        print('Pivoting')
+        print('Pivoting...')
         self.tableau.pivot(var_in, var_out)
-        for line in self.tableau.to_dict().split('\n'):
-            print(f'    {line}')
-        print()
 
     def do_simplex(self):
         while self.summary['status'] == '???':

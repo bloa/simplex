@@ -8,9 +8,18 @@ sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
 import simplex
 
 
+def print_tableau(tableau, method):
+    if method == 'tableau':
+        for line in tableau.to_tab().split('\n'):
+            print(f'    {line}')
+    else:
+        for line in tableau.to_dict().split('\n'):
+            print(f'    {line}')
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Simplex')
     parser.add_argument('--program', type=pathlib.Path, required=True)
+    parser.add_argument('--method', type=str, default='dictionary', choices={'tableau', 'dictionary'})
     args = parser.parse_args()
 
     print('[1] PARSING INPUT')
@@ -61,24 +70,47 @@ if __name__ == '__main__':
         print('-----------------------')
         p.do_tableau()
     if p.summary['status'] == '???':
-        print('Initial tableau:')
-        for line in p.tableau.to_tab().split('\n'):
-            print(f'    {line}')
-        print()
-        print('Initial dictionary:')
-        for line in p.tableau.to_dict().split('\n'):
-            print(f'    {line}')
+        print(f'Initial {args.method}:')
+        print_tableau(p.tableau, args.method)
 
     if p.summary['status'] == '???':
         print()
-        print('[6] RESOLUTION')
-        print('--------------')
+        if p.artificial_variables:
+            print('[6.1] RESOLUTION (big-M)')
+            print('--------------')
+            while True:
+                coefs_obj = p.tableau.coefs_obj(p.tableau.basis)
+                problematic = [var for var in p.tableau.basis if coefs_obj[var] > 0]
+                if not problematic:
+                    break
+                p.do_simplex_prestep()
+                print_tableau(p.tableau, args.method)
+                print()
+            while True:
+                coefs = p.tableau.coefs_column('')
+                problematic = [var for var in p.tableau.basis if coefs[var] < 0]
+                if not problematic:
+                    break
+                p.do_simplex_prestep()
+                print_tableau(p.tableau, args.method)
+                print()
+            p.do_simplify_artificial()
+            print(f'New simplified {args.method}: (removing artificial variables)')
+            print_tableau(p.tableau, args.method)
+            print()
+            print('[6.2] RESOLUTION (main)')
+            print('--------------')
+        else:
+            print('[6] RESOLUTION')
+            print('--------------')
+        p.do_simplex_step()
         while p.summary['status'] == '???':
+            print_tableau(p.tableau, args.method)
+            print()
             p.do_simplex_step()
         print()
-        print('Final dictionary:')
-        for line in p.tableau.to_dict().split('\n'):
-            print(f'    {line}')
+        print(f'Final {args.method}:')
+        print_tableau(p.tableau, args.method)
         p.do_simplex_final()
 
     print()
@@ -97,10 +129,10 @@ if __name__ == '__main__':
             if k in p.renames:
                 e = p.renames[k]
                 if v2:
-                    print(f'    {k} = {e} = {v} = {v2}')
+                    print(f'    {k} = {e} = {v} = {round(v2, 8)}')
                 else:
                     print(f'    {k} = {e} = {v}')
             elif v2:
-                print(f'    {k} = {v} = {v2}')
+                print(f'    {k} = {v} = {round(v2, 8)}')
             else:
                 print(f'    {k} = {v}')
