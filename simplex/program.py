@@ -574,17 +574,8 @@ class Program:
             exprs[obj_v] = tmp_e.root
 
         if self.summary['status'] == 'UNBOUNDED':
-            candidates = [v for v in self.tableau.variables if v not in self.tableau.basis]
-            coefs = self.tableau.coefs_obj_neg(candidates)
-            var_in = max(candidates, key=lambda v: coefs[v])
-            exprs[var_in] = Literal(float('inf'))
-            obj_e = self.objective
-            for v in obj_e.variables:
-                obj_e.replace(v, exprs[v])
-            obj_e.normalize()
-            exprs[obj_v] = obj_e.root.right
             self.summary['values'] = {}
-            self.summary['values'][obj_v] = str(exprs[obj_v])
+            self.summary['values'][obj_v] = 'inf' if self.objective.root.mode == 'max' else '-inf'
 
         if self.summary['status'] == 'SOLVED':
             self.summary['values'] = {}
