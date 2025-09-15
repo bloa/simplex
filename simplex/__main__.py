@@ -91,14 +91,16 @@ if __name__ == '__main__':
         for k, v in p.summary['values'].items():
             e = simplex.ExprTree.from_string(str(v))
             e.normalize()
-            v2 = e if str(e) != str(v) else None
+            v2 = e.evaluate({})
+            if str(e) == str(v2):
+                v2 = None
             if k in p.renames:
                 e = p.renames[k]
                 if v2:
-                    print(f'    {k} = {e} = {v2} = {v}')
+                    print(f'    {k} = {e} = {v} = {v2}')
                 else:
                     print(f'    {k} = {e} = {v}')
             elif v2:
-                print(f'    {k} = {v2} = {v}')
+                print(f'    {k} = {v} = {v2}')
             else:
                 print(f'    {k} = {v}')

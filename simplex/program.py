@@ -562,11 +562,11 @@ class Program:
             obj_e.normalize()
             exprs[obj_v] = obj_e.root.right
             self.summary['values'] = {}
-            self.summary['values'][obj_v] = exprs[obj_v].evaluate({})
+            self.summary['values'][obj_v] = str(exprs[obj_v])
 
         if self.summary['status'] == 'SOLVED':
             self.summary['values'] = {}
-            self.summary['values'][obj_v] = exprs[obj_v].evaluate({})
+            self.summary['values'][obj_v] = str(exprs[obj_v])
             for v in self.initial_variables:
                 if v == obj_v:
                     continue
@@ -575,6 +575,6 @@ class Program:
                     for v2 in tree.variables:
                         tree.replace(v2, exprs[v2])
                     tree.normalize()
-                    self.summary['values'][v] = tree.evaluate({})
+                    self.summary['values'][v] = str(tree)
                 else:
-                    self.summary['values'][v] = exprs[v].evaluate({})
+                    self.summary['values'][v] = str(exprs[v])
