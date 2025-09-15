@@ -478,6 +478,28 @@ class Program:
             print(self.tableau.to_dict())
             print()
 
+        # cleanup remaining negative variables
+        while True:
+            coefs = self.tableau.coefs_column('')
+            var_out = next((var for var in self.tableau.basis if coefs[var] < 0), None)
+            if var_out is None:
+                break
+            print(f'Removing negative {var_out} from basis')
+            candidates = self.tableau.aux_art_candidates(artificials)
+            row_out = self.tableau.row_for_basic(var_out)
+            coefs = self.tableau.aux_art_coefs(row_out, candidates)
+            print('    coefs:', *(f'{v}:{x}' for v, x in coefs.items()))
+            if tmp := [v for v in candidates if coefs[v] >= 0]:
+                var_in = min(tmp, key=lambda v: coefs[v])
+                print(f'    -> {var_in} replaces {var_out} (min positive ratio)')
+            else:
+                print('... none strictly positive')
+                self.summary['status'] = 'INFEASIBLE'
+                return
+            self.tableau.pivot(var_in, var_out)
+            print(self.tableau.to_dict())
+            print()
+
         # simplify linear program
         for var in artificials:
             self.tableau.delete(var)
