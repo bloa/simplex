@@ -101,8 +101,15 @@ class Parser:
         while token := self.accept(
                 ('OP', '*'),
                 ('OP', '/'),
+                ('VAR', None),
         ):
-            expr_left = BinaryOp(token.value, expr_left, self.parse_atom())
+            if token.type == 'OP':
+                expr_left = BinaryOp(token.value, expr_left, self.parse_atom())
+            elif isinstance(expr_left, Literal):
+                expr_left = BinaryOp('*', expr_left, Variable(token.value))
+            else:
+                msg = f'Unexpected token {token}'
+                raise SyntaxError(msg)
         return expr_left
 
     def parse_atom(self):

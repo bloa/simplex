@@ -67,6 +67,16 @@ def tokens_of(s):
         ('OP', '>'),
         ('NUMBER', 0),
     ]),
+    ('1*x + 2y + 3', [
+        ('NUMBER', 1),
+        ('OP', '*'),
+        ('VAR', 'x'),
+        ('OP', '+'),
+        ('NUMBER', 2),
+        ('VAR', 'y'),
+        ('OP', '+'),
+        ('NUMBER', 3),
+    ]),
 ])
 def test_tokenize(expr, expected):
     assert tokens_of(expr) == expected

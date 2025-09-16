@@ -3,6 +3,19 @@ import pytest
 from simplex import BoolTree, ExprTree, MathTree, ObjectiveTree
 
 
+## Syntax errors
+
+@pytest.mark.parametrize(('expr', 'expected'), [
+    ('not', SyntaxError),
+    ('1 and', SyntaxError),
+    ('x y', SyntaxError),
+    ('+ 2', SyntaxError),
+])
+def test_expr_tree_syntax_error(expr, expected):
+    with pytest.raises(expected):
+        ExprTree.from_string(expr)
+
+
 ## Typing errors
 
 @pytest.mark.parametrize(('expr', 'expected'), [
@@ -23,7 +36,7 @@ def test_expr_tree_typing_error(expr, expected):
 ])
 def test_math_tree_typing_error(expr, expected):
     with pytest.raises(expected):
-        print(MathTree.from_string(expr))
+        MathTree.from_string(expr)
 
 @pytest.mark.parametrize(('expr', 'expected'), [
     ('1', TypeError),
@@ -51,6 +64,10 @@ def test_objective_tree_typing_error(expr, expected):
     ('1 + 2', {}, 3),
     ('-1 + 2', {}, 1),
     ('-(-1)', {}, 1),
+    ('2*x', {'x':3}, 6),
+    ('2x', {'x':3}, 6),
+    ('2 x1', {'x1':3}, 6),
+    ('2x * y', {'x':3, 'y':5}, 30),
     ('-(((-(-(1)))))', {}, -1),
     ('1.2 + 2.5', {}, 3.7),
     ('(2 + x) * y', {'x': 2, 'y': 3}, 12),
