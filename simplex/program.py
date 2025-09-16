@@ -544,9 +544,13 @@ class Program:
         candidates = [v for v in self.tableau.basis if col_var[v] != 0]
         coefs = {v: col_lit[v]/col_var[v] for v in candidates}
         print('    coefs:', *(f'{v}:{round(x, 8)}' for v, x in coefs.items()))
-        if tmp := [v for v in candidates if coefs[v] >= 0]:
+        if tmp := [v for v in candidates if coefs[v] > 0]:
             var_out = min(tmp, key=lambda v: coefs[v])
             print(f'    -> {var_out} (min positive ratio)')
+        elif tmp := [v for v in candidates if coefs[v] == 0]:
+            var_out = tmp[0]
+            print(f'    -> {var_out} (degenerate pivot point)')
+            return
         else:
             print('    ... none strictly positive')
             self.summary['status'] = 'UNBOUNDED'
