@@ -1,5 +1,5 @@
 from .expr_nodes import BinaryOp, Literal, UnaryOp, Variable
-from .expr_tree import MathTree
+from .expr_trees import MathTree
 from .rewriter import Rewriter
 from .utils import prefix_unique
 

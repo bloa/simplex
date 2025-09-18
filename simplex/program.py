@@ -2,7 +2,7 @@ import pathlib
 import re
 
 from .expr_nodes import BinaryOp, ExprList, Literal, UnaryOp, Variable
-from .expr_tree import BoolTree, MathTree, ObjectiveTree
+from .expr_trees import BoolTree, MathTree, ObjectiveTree
 from .rewriter import Rewriter
 from .tableau import Tableau
 from .utils import prefix_unique, prefix_sort
