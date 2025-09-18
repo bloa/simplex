@@ -7,7 +7,7 @@ from simplex import Program
 
 
 prog_files = []
-for txt in pathlib.Path('examples').glob('*'):
+for txt in pathlib.Path().glob('*examples*/*'):
     print(txt)
     with pathlib.Path.open(txt, 'r') as f:
         raw = f.read()

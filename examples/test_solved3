@@ -5,3 +5,5 @@ x1, x2 >= -0.5
 
 # expected status = SOLVED
 # expected z = 2
+# expected x1 = 1
+# expected x2 = 1
