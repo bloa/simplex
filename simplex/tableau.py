@@ -1,5 +1,6 @@
 from .expr_nodes import BinaryOp, Literal, UnaryOp, Variable
 from .expr_tree import MathTree
+from .rewriter import Rewriter
 from .utils import prefix_unique
 
 class Tableau:
@@ -22,7 +23,7 @@ class Tableau:
         tmp = {}
         for k, v in self.aux_data(self.objective.root.right, self.columns).items():
             t = MathTree(UnaryOp('-', v) if k else v)
-            t.normalize()
+            Rewriter().normalize(t)
             tmp[k] = t.root
         self.data.append(tmp)
         for c in self.constraints:
@@ -32,7 +33,7 @@ class Tableau:
                     tmp[k] = BinaryOp('-', tmp[k], v)
                 for k, v in tmp.items():
                     t = MathTree(v if k else UnaryOp('-', v))
-                    t.normalize()
+                    Rewriter().normalize(t)
                     tmp[k] = t.root
                 self.data.append(tmp)
         self.basis = basis
@@ -62,7 +63,7 @@ class Tableau:
         tree.visit(visitor)
         for k, v in acc.items():
             tmp = MathTree(v)
-            tmp.normalize()
+            Rewriter().normalize(tmp)
             acc[k] = tmp.root
         return dict(acc)
 
@@ -124,7 +125,7 @@ class Tableau:
         for line in self.data:
             for v in self.columns:
                 expr = MathTree(line[v])
-                expr.normalize()
+                Rewriter().normalize(expr)
                 line[v] = expr.root
 
         # update basis and columns
@@ -172,7 +173,7 @@ class Tableau:
         for line in self.data:
             for v in self.columns:
                 t = MathTree(UnaryOp('-', line[v]))
-                t.normalize()
+                Rewriter().normalize(t)
                 just[v] = max(just[v], len(str(t)), len(str(line[v])))
         for v in self.columns:
             just[v] += len(v) + (1 if v else 0)
@@ -185,7 +186,7 @@ class Tableau:
             if v in self.basis and str(line[v]) == '0':
                 continue
             expr = MathTree(UnaryOp('-', line[v]) if v else line[v])
-            expr.normalize()
+            Rewriter().normalize(expr)
             x = expr.evaluate({})
             s = ''
             if v == '':
@@ -208,7 +209,7 @@ class Tableau:
                 if v in self.basis and str(self.data[0][v]) == '0':
                     continue
                 expr = MathTree(UnaryOp('-', line[v]) if v else line[v])
-                expr.normalize()
+                Rewriter().normalize(expr)
                 x = expr.evaluate({})
                 s = ''
                 if v == '':

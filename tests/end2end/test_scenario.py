@@ -21,10 +21,10 @@ for txt in pathlib.Path().glob('*examples*/*'):
 @pytest.mark.parametrize(('filename', 'expected'), prog_files, ids=str)
 def test_prog_commands(filename, expected):
     p = Program.parse_file(filename)
-    p.do_renames()
     p.do_normalize()
     if p.summary['status'] == '???':
         p.do_canonical()
+        p.do_trivial_check()
     if p.summary['status'] == '???':
         p.do_standard()
     if p.summary['status'] == '???':

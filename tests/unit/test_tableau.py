@@ -1,6 +1,6 @@
 import pytest
 
-from simplex import ExprTree, MathTree, Tableau, ObjectiveTree
+from simplex import ExprTree, MathTree, Rewriter, Tableau, ObjectiveTree
 
 
 @pytest.fixture
@@ -39,7 +39,7 @@ s2 =  6         + -5*x2"""
 ])
 def test_aux_data(expr, expected):
     tree = MathTree.from_string(expr)
-    tree.normalize()
+    Rewriter().normalize(tree)
     tmp = Tableau.aux_data(tree.root, [*tree.variables, ''])
     assert {k: str(v) for k, v in tmp.items()} == {k: str(v) for k, v in expected.items()}
 

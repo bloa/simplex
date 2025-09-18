@@ -1,9 +1,9 @@
-import copy
 import pathlib
 import re
 
 from .expr_nodes import BinaryOp, ExprList, Literal, UnaryOp, Variable
 from .expr_tree import BoolTree, MathTree, ObjectiveTree
+from .rewriter import Rewriter
 from .tableau import Tableau
 from .utils import prefix_unique, prefix_sort
 
@@ -52,70 +52,69 @@ class Program:
         self.artificial_variables = []
         self.initial_basis = []
         self.tableau = None
-        self.names = {'objective': 'z', 'variable': 'x', 'slack': 's', 'artificial': 'a'}
+        self.names = {
+            'objective': 'z',
+            'variable': 'x',
+            'slack': 's',
+            'artificial': 'a',
+        }
         self.renames = {}
         self.summary = {
             'status': '???',
+            'values': {},
+            'eliminated': {},
         }
 
     def __str__(self):
         tmp = [str(self.objective)]
+        neg_var = []
         pos_var = []
         for c in self.constraints:
             e = c.root
-            if isinstance(e, BinaryOp) and e.op == '>=' and isinstance(e.left, Variable) and isinstance(e.right, Literal) and e.right.value == 0:
-                pos_var.append(e.left.name)
+            if isinstance(e, BinaryOp) and isinstance(e.left, Variable) and isinstance(e.right, Literal) and e.right.value == 0:
+                if e.op == '<=':
+                    neg_var.append(e.left.name)
+                elif e.op == '>=':
+                    pos_var.append(e.left.name)
             else:
                 tmp.append(str(e))
+        if neg_var:
+            tmp.append(str(BinaryOp('<=', ExprList(prefix_sort(neg_var)), Literal(0))))
         if pos_var:
-            tmp.append(str(BinaryOp('>=', ExprList(pos_var), Literal(0))))
+            tmp.append(str(BinaryOp('>=', ExprList(prefix_sort(pos_var)), Literal(0))))
         return '\n'.join(tmp)
 
-    def normalize(self):
-        self.objective.variables = prefix_sort(self.objective.variables)
+    def _cut_and_add(self, expr, acc, accstr):
+        if isinstance(expr.root, ExprList):
+            for e in expr.root.exprlist:
+                self._cut_and_add(BoolTree(e), acc, accstr)
+            return
+        if isinstance(expr.root, BinaryOp):
+            if expr.root.op == 'and':
+                self._cut_and_add(BoolTree(expr.root.left), acc, accstr)
+                self._cut_and_add(BoolTree(expr.root.right), acc, accstr)
+                return
+            if expr.root.op == 'or':
+                msg = '"or" expressions may not be linearisable'
+                raise RuntimeError(msg)
+        exprstr = str(expr)
+        if not any(exprstr == s for s in accstr):
+            acc.append(expr)
+            accstr.append(exprstr)
+
+    def do_normalize(self):
+        # pre-normalize
+        Rewriter().normalize(self.objective)
         for c in self.constraints:
-            c.variables = prefix_sort(c.variables)
-        self.objective.normalize()
+            Rewriter().normalize(c)
 
-        def _cut_and_add(expr, acc, accstr):
-            if isinstance(expr.root, BinaryOp):
-                if isinstance(expr.root.left, ExprList):
-                    for e in expr.root.left.exprlist:
-                        assert isinstance(e, Variable)
-                        newc = copy.deepcopy(expr)
-                        newc.replace(newc.root.left, Variable(e.name))
-                        _cut_and_add(newc, acc, accstr)
-                    return
-                if isinstance(expr.root.left, UnaryOp) and expr.root.left.op == '-' and isinstance(expr.root.left.right, ExprList):
-                    for e in expr.root.left.right.exprlist:
-                        assert isinstance(e, Variable)
-                        newc = copy.deepcopy(expr)
-                        newc.replace(newc.root.left.right, Variable(e.name))
-                        _cut_and_add(newc, acc, accstr)
-                    return
-                if expr.root.op == 'and':
-                    _cut_and_add(BoolTree(expr.root.left), acc, accstr)
-                    _cut_and_add(BoolTree(expr.root.right), acc, accstr)
-                    return
-            expr.normalize()
-            exprstr = str(expr)
-            if not any(exprstr == s for s in accstr):
-                acc.append(expr)
-                accstr.append(exprstr)
-
+        # split "and" constraints and expression lists ("x1, x2 >= 0")
         tmp = []
         tmpstr = []
         for c in self.constraints:
-            _cut_and_add(c, tmp, tmpstr)
+            self._cut_and_add(c, tmp, tmpstr)
         self.constraints = tmp
 
-        tmp = self.objective.variables[:]
-        for c in self.constraints:
-            tmp.extend(c.variables)
-        self.variables = prefix_unique(tmp)
-
-    def do_renames(self):
-        self.normalize()
         # rename objective variable
         tmp = self.objective.root.var
         while True:
@@ -126,14 +125,12 @@ class Program:
         newvar = self.names['objective']
         if oldvar != newvar:
             if newvar in self.variables:
-                raise NotImplementedError
+                msg = f'objective variable name "{newvar}" already in use as decision variable'
+                raise RuntimeError(msg)
             print(f'... renaming "{oldvar}" into "{newvar}"')
             self.objective.rename(oldvar, newvar)
             self.renames[oldvar] = MathTree(Variable(newvar))
-            self.variables.remove(oldvar)
-            self.variables.append(newvar)
-        # then normalize
-        self.normalize()
+
         # then rename variables
         varid = 1
         newvar = self.names['variable']
@@ -151,23 +148,35 @@ class Program:
                 self.variables.remove(oldvar)
                 self.variables.append(f'{newvar}{varid}')
 
-    def do_normalize(self):
-        self.normalize()
-        if not any(c.root.op == '<=' for c in self.constraints):
-            print('problem: are no (<=) constrainst')
-            self.do_trivial_final()
+        # re-normalize (to reorder variables)
+        Rewriter().normalize(self.objective)
+        for c in self.constraints:
+            Rewriter().normalize(c)
 
-    def do_expend(self):
-        # TODO: refactor normalize()
-        self.normalize()
+        # compute variable list
+        self.objective.variables = prefix_sort(self.objective.variables)
+        tmp = self.objective.variables[:]
+        for c in self.constraints:
+            c.variables = prefix_sort(c.variables)
+            tmp.extend(c.variables)
+        self.variables = prefix_unique(tmp)
 
     def do_canonical(self):
-        self.do_expend() # just in case
-        # handle "or"
-        if any(isinstance(c.root, BinaryOp) and c.root.op == 'or' for c in self.constraints):
-            msg = 'TODO: handle "or" with bigM'
-            raise NotImplementedError(msg)
-        # then renames single-variable constraints
+        self.do_normalize() # just in case
+
+        # rewrite
+        Rewriter().do_canonical(self.objective)
+        for c in self.constraints:
+            Rewriter().do_canonical(c)
+
+        # split new "and" constraints
+        tmp = []
+        tmpstr = []
+        for c in self.constraints:
+            self._cut_and_add(c, tmp, tmpstr)
+        self.constraints = tmp
+
+        # rename single-variable constraints
         newvar = self.names['variable']
         for oldvar in self.variables[:]:
             varid = 1
@@ -206,7 +215,7 @@ class Program:
                 return MathTree.from_string(str(s)).root
             def to_norm(s):
                 tree = MathTree.from_string(str(s))
-                tree.normalize()
+                Rewriter().normalize(tree)
                 return tree.root
             if varmin is None:
                 if varmax is None:
@@ -295,7 +304,13 @@ class Program:
                 for c in self.constraints:
                     if oldvar in c.variables:
                         c.replace(Variable(oldvar), newexpr)
+                        Rewriter().normalize(c)
+                self.summary['eliminated'][oldvar] = to_norm(varmin)
                 print(f'... eliminated {oldvar} everywhere')
+            elif varmax and varmin > varmax:
+                print(f'problem: {oldvar} <= {to_norm(varmax)} and {oldvar} >= {to_norm(varmin)}')
+                self.summary['status'] = 'INFEASIBLE'
+                return
             elif varmin > 0:
                 if varmax:
                     print(f'problem: {to_norm(varmin)} <= {oldvar} <= {to_norm(varmax)}')
@@ -338,21 +353,29 @@ class Program:
                         c.replace(Variable(oldvar), newexpr)
                 self.variables.append(f'{newvar}{varid}')
                 print(f'... introduced {newvar}{varid} = {newexpr2} >= 0 (i.e., {oldvar} = {newexpr})')
-        # then normalize again (reorder variables)
-        self.normalize()
-        # simplify
-        if sum(str(c) == 'False' for c in self.constraints):
+
+        self.objective.variables = prefix_sort(self.objective.variables)
+        Rewriter().do_canonical(self.objective)
+        for c in self.constraints:
+            Rewriter().do_canonical(c)
+
+    def do_trivial_check(self):
+        # fail on "False"
+        if any(str(c) == 'False' for c in self.constraints):
             print('problem: there are trivially False constraints')
             self.summary['status'] = 'INFEASIBLE'
             return
-        self.constraints = [c for c in self.constraints if str(c) not in ['True', 'False']]
+        # remove "True"
+        self.constraints = [c for c in self.constraints if str(c) != 'True']
+        # fail on weird constraints
         for c in self.constraints:
             if not isinstance(c.root, BinaryOp) and c.root in ['<=', '>=']:
                 msg = f'Illegal constraint: {c}'
                 raise RuntimeError(msg)
+        # reorder "<=" before ">="
         tmp1 = [c for c in self.constraints if c.root.op == '<=']
         if not tmp1:
-            print('problem: there is no (<=) constrainst')
+            print('problem: there is no (<=) constraint')
             self.do_trivial_final()
             return
         tmp2 = [c for c in self.constraints if c.root.op == '>=']
@@ -371,6 +394,7 @@ class Program:
                     varid += 1
                 c.root = BinaryOp('==', BinaryOp('+', c.root.left, Variable(f'{newvar}{varid}')), c.root.right)
                 c.variables.append(f'{newvar}{varid}')
+                Rewriter().normalize(c)
                 self.variables.append(f'{newvar}{varid}')
                 self.constraints.append(BoolTree(BinaryOp('>=', Variable(f'{newvar}{varid}'), Literal(0))))
                 if c.root.right.evaluate({}) < 0:
@@ -388,14 +412,10 @@ class Program:
                     self.artificial_variables.append(f'{newvar}{varid}')
                     print(f'... introduced additional {newvar}{varid} >= 0 and updated objective')
                 self.initial_basis.append(f'{newvar}{varid}')
-        # TODO: refactor normalize()
+        self.objective.variables = prefix_sort(self.objective.variables)
+        Rewriter().normalize(self.objective)
         for c in self.constraints:
-            if c.root.op == '==':
-                c.root.op = '='
-        self.normalize()
-        for c in self.constraints:
-            if c.root.op == '=':
-                c.root.op = '=='
+            Rewriter().normalize(c)
 
     def do_trivial_final(self):
         tab = Tableau(self.objective, self.constraints, [])
@@ -415,7 +435,7 @@ class Program:
         # final values
         exprs = {v: Literal(0) for v in self.variables}
         tmp_e = MathTree(self.objective.root.var)
-        tmp_e.normalize()
+        Rewriter().normalize(tmp_e)
         if isinstance(tmp_e.root, Variable):
             obj_v = tmp_e.root.name
             exprs[obj_v] = Literal(self.objective.evaluate(context))
@@ -435,7 +455,7 @@ class Program:
                     tree = MathTree(self.renames[v].root)
                     for v2 in tree.variables:
                         tree.replace(v2, exprs[v2])
-                    tree.normalize()
+                    Rewriter().normalize(tree)
                     self.summary['values'][v] = tree.evaluate({})
                 else:
                     self.summary['values'][v] = exprs[v].evaluate({})
@@ -459,7 +479,7 @@ class Program:
                 msg = 'positive coeficient for non-artificial basic variable?!'
                 raise RuntimeError(msg)
             print(f'Removing artificial {var_out} from basis')
-            candidates = self.tableau.aux_art_candidates(problematic)
+            candidates = self.tableau.aux_art_candidates(problematic + self.artificial_variables)
             row_out = self.tableau.row_for_basic(var_out)
             coefs = self.tableau.aux_art_coefs(row_out, candidates)
             print('    coefs:', *(f'{v}:{round(x, 8)}' for v, x in coefs.items()))
@@ -480,7 +500,7 @@ class Program:
         if problematic:
             var_out = problematic[0]
             print(f'Removing negative {var_out} from basis')
-            candidates = self.tableau.aux_art_candidates(problematic)
+            candidates = self.tableau.aux_art_candidates(problematic + self.artificial_variables)
             row_out = self.tableau.row_for_basic(var_out)
             coefs = self.tableau.aux_art_coefs(row_out, candidates)
             print('    coefs:', *(f'{v}:{round(x, 8)}' for v, x in coefs.items()))
@@ -495,29 +515,39 @@ class Program:
             self.tableau.pivot(var_in, var_out)
             return
 
-    def do_simplify_artificial(self):
+    def do_simplify_artificial(self, to_delete=None):
         if not self.artificial_variables:
             return
+
         # ensure everything is done
-        while True:
+        if not to_delete:
+            to_delete = []
+        while self.summary['status'] == '???':
             coefs_obj = self.tableau.coefs_obj(self.tableau.basis)
             problematic = [var for var in self.tableau.basis if coefs_obj[var] > 0]
             if not problematic:
                 break
+            to_delete += problematic
             self.do_simplex_prestep()
-        while True:
+        while self.summary['status'] == '???':
             coefs = self.tableau.coefs_column('')
             problematic = [var for var in self.tableau.basis if coefs[var] < 0]
             if not problematic:
                 break
             self.do_simplex_prestep()
+
         # simplify
-        for var in self.artificial_variables:
-            self.tableau.delete(var)
+        if self.summary['status'] == '???':
+            for var in set(to_delete):
+                if var in self.artificial_variables:
+                    self.tableau.delete(var)
+                else:
+                    msg = 'deleting a non-artificial variable?!'
+                    raise RuntimeError(msg)
 
     def do_simplex_step(self):
         # look for artificial variables
-        self.do_simplex_prestep()
+        self.do_simplify_artificial()
         if self.summary['status'] != '???':
             return
 
@@ -530,29 +560,26 @@ class Program:
         print('Searching for a variable to enter the basis')
         candidates = [v for v in self.tableau.variables if v not in self.tableau.basis]
         coefs = self.tableau.coefs_obj_neg(candidates)
-        print('    coefs:', *(f'{v}:{round(x, 8)}' for v, x in coefs.items()))
-        var_in = max(candidates, key=lambda v: coefs[v])
-        if coefs[var_in] <= 0:
+        candidates = [v for v in candidates if coefs[v] > 0]
+        if not candidates:
             print('   ... none strictly positive')
             self.summary['status'] = 'SOLVED'
             return
+        print('    coefs:', *(f'{v}:{round(x, 8)}' for v, x in coefs.items()))
+        var_in = max(candidates, key=lambda v: coefs[v])
         print(f'    -> {var_in} (max positive coef)')
 
         print('Searching for a variable to exit the basis')
         col_lit = self.tableau.coefs_column('')
         col_var = self.tableau.coefs_column(var_in)
-        candidates = [v for v in self.tableau.basis if col_var[v] != 0]
+        candidates = [v for v in self.tableau.basis if col_var[v] > 0]
         coefs = {v: col_lit[v]/col_var[v] for v in candidates}
-        print('    coefs:', *(f'{v}:{round(x, 8)}' for v, x in coefs.items()))
-        if tmp := [v for v in candidates if coefs[v] > 0]:
+        if tmp := [v for v in candidates if coefs[v] >= 0]:
             var_out = min(tmp, key=lambda v: coefs[v])
+            print('    ratios:', *(f'{v}:{round(x, 8)}' for v, x in coefs.items()))
             print(f'    -> {var_out} (min positive ratio)')
-        elif tmp := [v for v in candidates if coefs[v] == 0]:
-            var_out = tmp[0]
-            print(f'    -> {var_out} (degenerate pivot point)')
-            return
         else:
-            print('    ... none strictly positive')
+            print('    ... no strictly positive coef')
             self.summary['status'] = 'UNBOUNDED'
             return
 
@@ -567,11 +594,13 @@ class Program:
     def do_simplex_final(self):
         # final values
         exprs = {v: Literal(0) for v in self.variables}
+        for k, v in self.summary['eliminated'].items():
+            exprs[k] = Literal(v)
         for v in self.tableau.basis:
             row = self.tableau.row_for_basic(v)
             exprs[v] = row['']
         tmp_e = MathTree(self.objective.root.var)
-        tmp_e.normalize()
+        Rewriter().normalize(tmp_e)
         if isinstance(tmp_e.root, Variable):
             obj_v = tmp_e.root.name
             exprs[obj_v] = self.tableau.data[0]['']
@@ -579,15 +608,16 @@ class Program:
             assert isinstance(tmp_e.root.right, Variable)
             obj_v = tmp_e.root.right.name
             tmp_e = MathTree(UnaryOp('-', self.tableau.data[0]['']))
-            tmp_e.normalize()
+            Rewriter().normalize(tmp_e)
             exprs[obj_v] = tmp_e.root
 
         if self.summary['status'] == 'UNBOUNDED':
-            self.summary['values'] = {}
-            self.summary['values'][obj_v] = 'inf' if self.objective.root.mode == 'max' else '-inf'
+            if self.objective.root.mode == 'max':
+                self.summary['values'][obj_v] = '-inf' if isinstance(self.objective.root.var, UnaryOp) else 'inf'
+            elif self.objective.root.mode == 'min':
+                self.summary['values'][obj_v] = 'inf' if isinstance(self.objective.root.var, UnaryOp) else '-inf'
 
         if self.summary['status'] == 'SOLVED':
-            self.summary['values'] = {}
             self.summary['values'][obj_v] = str(exprs[obj_v])
             for v in self.initial_variables:
                 if v == obj_v:
@@ -596,7 +626,7 @@ class Program:
                     tree = MathTree(self.renames[v].root)
                     for v2 in tree.variables:
                         tree.replace(v2, exprs[v2])
-                    tree.normalize()
+                    Rewriter().normalize(tree)
                     self.summary['values'][v] = str(tree)
                 else:
                     self.summary['values'][v] = str(exprs[v])
