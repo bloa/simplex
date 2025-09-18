@@ -33,7 +33,7 @@ class ExprTree:
             if isinstance(node, Variable) and node.name == old:
                 node.name = new
         self.root.visit(visitor)
-        self.variables = {new if var == old else var for var in self.variables}
+        self.variables = [new if var == old else var for var in self.variables]
 
     def replace(self, old, new):
         def visitor(node):

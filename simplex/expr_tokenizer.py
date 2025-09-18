@@ -27,7 +27,7 @@ def tokenize(s):
                     has_dot = True
                 i += 1
             num = s[start:i]
-            value = float(num) if '.' in num else int(num)
+            value = float(num) if has_dot else int(num)
             tokens.append(Token('NUMBER', value))
 
         # identifiers and keywords
