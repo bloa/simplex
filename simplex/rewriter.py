@@ -193,6 +193,9 @@ class Rewriter:
                     if self._is_binop(node.right, '/'):
                         return binop('/', binop('*', node.left, node.right.right), node.right.left)
                 if node.op == '+':
+                    # linearize "+" trees
+                    if self._is_binop(node.right, '+'):
+                        return binop('+', binop('+', node.left, node.right.left), node.right.right)
                     # reduce literals
                     if isinstance(node.left, Literal):
                         if isinstance(node.right, Literal):
@@ -213,8 +216,6 @@ class Rewriter:
                             if self._almost_literal(node.right):
                                 return binop('+', node.left.left, binop('+', node.left.right, node.right))
                             return binop('+', binop('+', node.left.left, node.right), node.left.right)
-                        if self._is_binop(node.right, '+') and self._almost_literal(node.right.right):
-                            return binop('+', binop('+', node.left.left, node.right.left), binop('+', node.left.right, node.right.right))
                         if isinstance(node.left.right, Variable) and isinstance(node.right, Variable):
                             if node.left.right.name == node.right.name:
                                 return binop('+', node.left.left, BinaryOp('*', Literal(2), node.right))
@@ -235,9 +236,6 @@ class Rewriter:
                                 return binop('+', node.left.left, binop('*', binop('+', node.right.left, Literal(1)), node.right.right))
                             if self._is_unsorted(node.left.right.right.name, node.right.right.name):
                                 return binop('+', binop('+', node.left.left, node.right), node.left.right)
-                    # linearize "+" trees
-                    if self._is_binop(node.right, '+'):
-                        return binop('+', binop('+', node.left, node.right.left), node.right.right)
                     # reduces and reorder variables
                     if isinstance(node.left, Variable) and self._is_binop(node.right, '*') and isinstance(node.right.right, Variable):
                         if node.right.right.name == node.left.name:

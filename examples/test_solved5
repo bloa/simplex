@@ -1,0 +1,12 @@
+max z = x1 + x2 + x3
+x1 + x2 <= 2
+x2 <= 1
+x3 <= 1
+x2 >= 0
+x3 >= -1
+
+# expected status = SOLVED
+# expected z = 3
+# expected x1 = 1
+# expected x2 = 1
+# expected x3 = 1
