@@ -6,7 +6,8 @@ A minimal Python implementation of the simplex algorithm, intended for academic 
 ## Installation
 
 No installation is required beyond cloning this repository.  
-The solver has no external dependencies (Python 3.11+ recommended).
+The solver has no external dependencies.
+Python 3.11 or later is recommended.
 
 ```bash
 git clone https://github.com/bloa/simplex.git
@@ -16,17 +17,32 @@ cd simplex
 
 ## Usage
 
-You can run the solver on example problems directly:
+To try the solver, run it on the provided example problems:
 
 ```bash
 python3 simplex --program examples/test_solved1
 ```
 
+ou can choose between a tableau-based or dictionary-based representation using `--method` (default is `dictionary`):
+
+```bash
+python3 simplex --program examples/test_unbounded1 --method tableau
+```
 
 ## Testing
 
-Automated tests can be run using [pytest](https://pytest.org/):
+Run the test suite with [pytest](https://pytest.org/):
 
 ```bash
 pytest
 ```
+
+## Contributions
+
+Contributions are welcome via pull requests.
+
+Planned improvements include:
+- interactive mode for selecting pivots
+- support for the two-phase resolution method
+- support for solving through the dual problem
+- improved formatting options, including LaTeX output
