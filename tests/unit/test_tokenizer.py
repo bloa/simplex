@@ -1,6 +1,6 @@
 import pytest
 
-from simplex.expr_trees import tokenize
+from simplex.parsing import tokenize
 
 
 def tokens_of(s):

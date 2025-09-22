@@ -1,6 +1,6 @@
 import pytest
 
-from simplex import BoolTree, ExprTree, MathTree, ObjectiveTree
+from simplex.parsing import BoolTree, ExprTree, MathTree, ObjectiveTree
 
 
 ## Syntax errors

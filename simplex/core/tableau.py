@@ -1,7 +1,9 @@
-from .expr_nodes import BinaryOp, Literal, UnaryOp, Variable
-from .expr_trees import MathTree
+from simplex.parsing import BinaryOp, Literal, UnaryOp, Variable
+from simplex.parsing import MathTree
+from simplex.utils import prefix_unique
+
 from .rewriter import Rewriter
-from .utils import prefix_unique
+
 
 class Tableau:
     def __init__(self, objective, constraints, basis):

@@ -1,11 +1,13 @@
 import pathlib
 import re
 
-from .expr_nodes import BinaryOp, ExprList, Literal, UnaryOp, Variable
-from .expr_trees import BoolTree, MathTree, ObjectiveTree
+from simplex.parsing import BinaryOp, ExprList, Literal, UnaryOp, Variable
+from simplex.parsing import BoolTree, MathTree, ObjectiveTree
+from simplex.utils import prefix_sort, prefix_unique
+
 from .rewriter import Rewriter
 from .tableau import Tableau
-from .utils import prefix_unique, prefix_sort
+
 
 class Program:
     @staticmethod

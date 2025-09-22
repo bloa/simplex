@@ -32,7 +32,7 @@ if __name__ == '__main__':
             print(f'    {line}')
     print()
 
-    p = simplex.Program.parse_str(raw)
+    p = simplex.core.Program.parse_str(raw)
     print('Parsed program:')
     for line in str(p).split('\n'):
             print(f'    {line}')
@@ -145,8 +145,8 @@ if __name__ == '__main__':
     if p.summary['values']:
         print('Final values:')
         for k, v in p.summary['values'].items():
-            e = simplex.ExprTree.from_string(str(v))
-            simplex.Rewriter().normalize(e)
+            e = simplex.parsing.ExprTree.from_string(str(v))
+            simplex.core.Rewriter().normalize(e)
             v2 = e.evaluate({})
             if str(e) == str(v2):
                 v2 = None

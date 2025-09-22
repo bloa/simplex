@@ -3,7 +3,7 @@ import re
 
 import pytest
 
-from simplex import Program
+from simplex.core import Program
 
 
 prog_files = []

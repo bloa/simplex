@@ -1,6 +1,7 @@
 import pytest
 
-from simplex import ExprTree, MathTree, Rewriter, Tableau, ObjectiveTree
+from simplex.core import Rewriter, Tableau
+from simplex.parsing import ExprTree, MathTree, ObjectiveTree
 
 
 @pytest.fixture

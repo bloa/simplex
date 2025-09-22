@@ -1,6 +1,8 @@
 import pytest
 
-from simplex import ExprTree, Rewriter
+from simplex.core import Rewriter
+from simplex.parsing import ExprTree
+
 
 @pytest.mark.parametrize(('expr', 'expected'), [
     ## MATH
