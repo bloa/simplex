@@ -18,20 +18,6 @@ def mock_tableau():
     initial_basis = ['s1', 's2']
     return Tableau(objective, constraints, initial_basis)
 
-def test_to_tab(mock_tableau):
-    expected = """x1  x2  s1  s2 |       
----------------+---=---
--1  -2   0   0 | 0 =  z
- 3   0   1   0 | 4 = s1
- 0   5   0   1 | 6 = s2"""
-    assert mock_tableau.to_tab() == expected
-
-def test_to_dict(mock_tableau):
-    expected = """ z =  0 +  1*x1 +  2*x2
-s1 =  4 + -3*x1        
-s2 =  6         + -5*x2"""
-    assert mock_tableau.to_dict() == expected
-
 @pytest.mark.parametrize(('expr', 'expected'), [
     ('x1 + x2 + x3', {'x1': 1, 'x2': 1, 'x3': 1, '': 0}),
     ('x + 2*y + x', {'x': 2, 'y': 2, '': 0}),
@@ -44,17 +30,16 @@ def test_aux_data(expr, expected):
     tmp = Tableau.aux_data(tree.root, [*tree.variables, ''])
     assert {k: str(v) for k, v in tmp.items()} == {k: str(v) for k, v in expected.items()}
 
+
 def test_delete(mock_tableau):
+    assert 'x1' in mock_tableau.columns
+    assert 'x2' in mock_tableau.columns
     mock_tableau.delete('x1')
-    expected = """ z =  0 +  2*x2
-s1 =  4        
-s2 =  6 + -5*x2"""
-    assert mock_tableau.to_dict() == expected
+    assert 'x1' not in mock_tableau.columns
+    assert 'x2' in mock_tableau.columns
     mock_tableau.delete('x2')
-    expected = """ z =  0
-s1 =  4
-s2 =  6"""
-    assert mock_tableau.to_dict() == expected
+    assert 'x1' not in mock_tableau.columns
+    assert 'x2' not in mock_tableau.columns
 
 @pytest.mark.parametrize(('candidates', 'expected'), [
     (['x1', 'x2'], {'x1': 1, 'x2': 2}),

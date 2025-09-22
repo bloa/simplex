@@ -3,7 +3,7 @@ import re
 
 import pytest
 
-from simplex.core import Program
+from simplex.__main__ import main
 
 
 prog_files = []
@@ -19,22 +19,12 @@ for txt in pathlib.Path().glob('*examples*/*'):
         prog_files.append((txt, expected))
 
 @pytest.mark.parametrize(('filename', 'expected'), prog_files, ids=str)
-def test_prog_commands(filename, expected):
-    p = Program.parse_file(filename)
-    p.do_normalize()
-    if p.summary['status'] == '???':
-        p.do_canonical()
-        p.do_trivial_check()
-    if p.summary['status'] == '???':
-        p.do_standard()
-    if p.summary['status'] == '???':
-        p.do_tableau()
-    if p.summary['status'] == '???':
-        p.do_simplex()
+def test_main(filename, expected):
+    summary = main(filename, 'bigm', 'dictionary')
     print('expected', expected)
-    print('summary', p.summary)
+    print('summary', summary)
     for k, v in expected.items():
         try:
-            assert str(p.summary[k]) == v
+            assert str(summary[k]) == v
         except KeyError:
-            assert str(p.summary['values'][k]) == v
+            assert str(summary['values'][k]) == v

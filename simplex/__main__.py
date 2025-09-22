@@ -8,150 +8,70 @@ sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
 import simplex
 
 
-def print_tableau(tableau, method):
-    if method == 'tableau':
-        for line in tableau.to_tab().split('\n'):
-            print(f'    {line}')
-    else:
-        for line in tableau.to_dict().split('\n'):
-            print(f'    {line}')
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Simplex')
-    parser.add_argument('--program', type=pathlib.Path, required=True)
-    parser.add_argument('--method', type=str, default='dictionary', choices={'tableau', 'dictionary'})
-    args = parser.parse_args()
+def main(filename, solver, method):
+    match solver:
+        case 'bigm':
+            solver = simplex.solvers.BigmSimplexSolver()
+    match method:
+        case 'tableau':
+            formatter = simplex.formatters.TableauCliFormatter()
+        case 'compact':
+            formatter = simplex.formatters.TableauCliFormatter()
+            formatter.compact = True
+        case 'dictionary':
+            formatter = simplex.formatters.DictCliFormatter()
+    solver.formatter = formatter
 
     print('[1] PARSING INPUT')
-    print('-----------------')
-    print(f'Raw input: ({args.program})')
-    with pathlib.Path.open(args.program, 'r') as f:
+    print('----------------------------------------')
+    print(f'Raw input: ({filename})')
+    with pathlib.Path.open(filename, 'r') as f:
         raw = f.read()
     for line in raw.split('\n'):
         if line.strip():
             print(f'    {line}')
     print()
 
-    p = simplex.core.Program.parse_str(raw)
+    model = simplex.core.Model.parse_str(raw)
     print('Parsed program:')
-    for line in str(p).split('\n'):
+    out = formatter.format_model(model)
+    for line in out.split('\n'):
             print(f'    {line}')
-    tmp = str(p)
+    tmp = out
 
     print()
-    print('[2] NORMALISATION')
-    print('--------------------------------')
-    p.do_normalize()
-    if str(p) == tmp:
+    print('[2] NORMALISING')
+    print('----------------------------------------')
+    solver.do_normalize(model)
+    if str(model) == tmp:
         print('Program already normalised')
     else:
-        print('After normalisation:')
-        for line in str(p).split('\n'):
+        print('Normalised program:')
+        out = formatter.format_model(model)
+        for line in out.split('\n'):
             print(f'    {line}')
-        tmp = str(p)
-
-    if p.summary['status'] == '???':
-        print()
-        print('[3] CONVERSION TO CANONICAL FORM')
-        print('--------------------------------')
-        p.do_canonical()
-        if str(p) == tmp:
-            print('Program already in canonical form')
-        else:
-            print('Program in canonical form:')
-            for line in str(p).split('\n'):
-                print(f'    {line}')
-            tmp = str(p)
-        p.do_trivial_check()
-        if p.summary['status'] == '???' and str(p) != tmp:
-            print('Program in canonical form: (reordered)')
-            for line in str(p).split('\n'):
-                print(f'    {line}')
-            tmp = str(p)
-
-    if p.summary['status'] == '???':
-        print()
-        print('[4] CONVERSION TO STANDARD FORM')
-        print('-------------------------------')
-        p.do_standard()
-        if str(p) == tmp:
-            print('Program already in standard form')
-        else:
-            print('Program in standard form:')
-            for line in str(p).split('\n'):
-                print(f'    {line}')
-
-    if p.summary['status'] == '???':
-        print()
-        print('[5] PRE-SIMPLEX PROGRAM')
-        print('-----------------------')
-        p.do_tableau()
-    if p.summary['status'] == '???':
-        print(f'Initial {args.method}:')
-        print_tableau(p.tableau, args.method)
-
-    if p.summary['status'] == '???':
-        print()
-        if p.artificial_variables:
-            print('[6.1] RESOLUTION (big-M)')
-            print('--------------')
-            to_delete = []
-            while p.summary['status'] == '???':
-                coefs_obj = p.tableau.coefs_obj(p.tableau.basis)
-                problematic = [var for var in p.tableau.basis if coefs_obj[var] > 0]
-                if not problematic:
-                    break
-                to_delete += problematic
-                p.do_simplex_prestep()
-                if p.summary['status'] == '???':
-                    print_tableau(p.tableau, args.method)
-                    print()
-            while p.summary['status'] == '???':
-                coefs = p.tableau.coefs_column('')
-                problematic = [var for var in p.tableau.basis if coefs[var] < 0]
-                if not problematic:
-                    break
-                p.do_simplex_prestep()
-                if p.summary['status'] == '???':
-                    print_tableau(p.tableau, args.method)
-                    print()
-            if p.summary['status'] == '???':
-                p.do_simplify_artificial(to_delete)
-                print(f'New simplified {args.method}: (removing artificial variables)')
-                print_tableau(p.tableau, args.method)
-                print()
-                print('[6.2] RESOLUTION (main)')
-                print('--------------')
-        else:
-            print('[6] RESOLUTION')
-            print('--------------')
-        if p.summary['status'] == '???':
-            p.do_simplex_step()
-            while p.summary['status'] == '???':
-                print_tableau(p.tableau, args.method)
-                print()
-                p.do_simplex_step()
-        if p.summary['status'] == '???':
-            print()
-            print(f'Final {args.method}:')
-            print_tableau(p.tableau, args.method)
-        p.do_simplex_final()
+        tmp = out
 
     print()
-    print('[7] SUMMARY')
-    print('-----------')
-    status = p.summary['status']
+    print('[3] SOLVING')
+    print('----------------------------------------')
+    solver.solve(model)
+
+    print()
+    print('[4] SUMMARY')
+    print('----------------------------------------')
+    status = solver.summary['status']
     print(f'Status: {status}')
-    if p.summary['values']:
+    if solver.summary['values']:
         print('Final values:')
-        for k, v in p.summary['values'].items():
+        for k, v in solver.summary['values'].items():
             e = simplex.parsing.ExprTree.from_string(str(v))
-            simplex.core.Rewriter().normalize(e)
+            solver.rewriter.normalize(e)
             v2 = e.evaluate({})
             if str(e) == str(v2):
                 v2 = None
-            if k in p.renames:
-                e = p.renames[k]
+            if k in solver.renames:
+                e = solver.renames[k]
                 if v2:
                     print(f'    {k} = {e} = {v} = {round(v2, 8)}')
                 else:
@@ -160,3 +80,15 @@ if __name__ == '__main__':
                 print(f'    {k} = {v} = {round(v2, 8)}')
             else:
                 print(f'    {k} = {v}')
+
+    return solver.summary
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Simplex')
+    parser.add_argument('--program', type=pathlib.Path, required=True)
+    parser.add_argument('--solver', type=str, default='bigm', choices={'bigm'})
+    parser.add_argument('--method', type=str, default='dictionary', choices={'tableau', 'compact', 'dictionary'})
+    args = parser.parse_args()
+
+    main(args.program, args.solver, args.method)

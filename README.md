@@ -23,7 +23,7 @@ To try the solver, run it on the provided example problems:
 python3 simplex --program examples/test_solved1
 ```
 
-ou can choose between a tableau-based or dictionary-based representation using `--method` (default is `dictionary`):
+You can choose between a tableau-based (with `tableau` or `compact`) or dictionary-based (with `dictionnary`, the default) representation using `--method`:
 
 ```bash
 python3 simplex --program examples/test_unbounded1 --method tableau
