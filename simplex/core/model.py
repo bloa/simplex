@@ -23,6 +23,7 @@ class Model:
                     msg = 'Multiple objective function found'
                     raise RuntimeError(msg)
                 model.objective = ObjectiveTree.from_string(m.group(1))
+                variables = set(model.objective.variables)
                 continue
             if m := re.search(r'^([^#]*)(#|$)', line):
                 if model.objective is None:

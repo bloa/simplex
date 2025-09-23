@@ -8,11 +8,18 @@ sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
 import simplex
 
 
-def main(filename, solver, method):
+def main(filename, solver, method, latex):
     match solver:
         case 'bigm':
             solver = simplex.solvers.BigmSimplexSolver()
     match method:
+        case 'tableau' if latex:
+            formatter = simplex.formatters.TableauLatexFormatter()
+        case 'compact' if latex:
+            formatter = simplex.formatters.TableauLatexFormatter()
+            formatter.compact = True
+        case 'dictionary' if latex:
+            formatter = simplex.formatters.DictLatexFormatter()
         case 'tableau':
             formatter = simplex.formatters.TableauCliFormatter()
         case 'compact':
@@ -89,6 +96,7 @@ if __name__ == '__main__':
     parser.add_argument('--program', type=pathlib.Path, required=True)
     parser.add_argument('--solver', type=str, default='bigm', choices={'bigm'})
     parser.add_argument('--method', type=str, default='dictionary', choices={'tableau', 'compact', 'dictionary'})
+    parser.add_argument('--latex', action='store_true')
     args = parser.parse_args()
 
-    main(args.program, args.solver, args.method)
+    main(args.program, args.solver, args.method, args.latex)

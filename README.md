@@ -29,6 +29,12 @@ You can choose between a tableau-based (with `tableau` or `compact`) or dictiona
 python3 simplex --program examples/test_unbounded1 --method tableau
 ```
 
+LaTeX formatting is supported through the `--latex` option:
+
+```bash
+python3 simplex --program examples/test_solved4 --method compact --latex
+```
+
 ## Testing
 
 Run the test suite with [pytest](https://pytest.org/):
@@ -45,4 +51,3 @@ Planned improvements include:
 - interactive mode for selecting pivots
 - support for the two-phase resolution method
 - support for solving through the dual problem
-- improved formatting options, including LaTeX output

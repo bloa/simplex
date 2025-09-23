@@ -4,8 +4,7 @@ from simplex.utils import prefix_sort
 
 
 class AbstractCliFormatter(AbstractFormatter):
-    @staticmethod
-    def format_model(model):
+    def format_model(self, model):
         tmp = [str(model.objective)]
         neg_var = []
         pos_var = []

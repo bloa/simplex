@@ -7,11 +7,13 @@ class TableauCliFormatter(AbstractCliFormatter):
 
     def format_tableau(self, tableau):
         out = []
+        # sizes for alignment
         head_just = max(*(len(v) for v in tableau.basis), len(str(tableau.objective.root.var)))
         just = {v: len(v) for v in tableau.columns}
         for line in tableau.data:
             for v in tableau.columns:
                 just[v] = max(just[v], len(str(line[v])))
+        # header
         tmp = []
         sep = []
         for k, v in enumerate(tableau.columns):
@@ -26,6 +28,7 @@ class TableauCliFormatter(AbstractCliFormatter):
         sep.append('-=-' + '-'*head_just)
         out.append(''.join(tmp))
         out.append(''.join(sep))
+        # data
         for j, line in enumerate(tableau.data):
             tmp = []
             for k, v in enumerate(line):
