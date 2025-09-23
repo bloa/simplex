@@ -23,37 +23,40 @@ class BigmSimplexSolver(BasicSimplexSolver):
         self.initial_variables = model.variables[:]
         self.artificial_variables = []
         self.initial_basis = []
-        tmp = str(model)
+        tmp = self.formatter.format_model(model)
 
         if self.summary['status'] == '???':
             print()
             print('[3.1] CONVERTING TO CANONICAL FORM')
             print('--------------------------------')
             self.do_canonical(model)
-            if str(model) == tmp:
+            out = self.formatter.format_model(model)
+            if out == tmp:
                 print('Program already in canonical form')
             else:
                 print('Program in canonical form:')
-                for line in str(model).split('\n'):
+                for line in out.split('\n'):
                     print(f'    {line}')
-                tmp = str(model)
+                tmp = out
             self.do_trivial_check(model)
-            if self.summary['status'] == '???' and str(model) != tmp:
+            out = self.formatter.format_model(model)
+            if self.summary['status'] == '???' and out != tmp:
                 print('Program in canonical form: (reordered)')
-                for line in str(model).split('\n'):
+                for line in out.split('\n'):
                     print(f'    {line}')
-                tmp = str(model)
+                tmp = out
 
         if self.summary['status'] == '???':
             print()
             print('[3.2] CONVERTING TO STANDARD FORM')
             print('-------------------------------')
             self.do_standard(model)
-            if str(model) == tmp:
+            out = self.formatter.format_model(model)
+            if out == tmp:
                 print('Program already in standard form')
             else:
                 print('Program in standard form:')
-                for line in str(model).split('\n'):
+                for line in out.split('\n'):
                     print(f'    {line}')
 
         if self.summary['status'] == '???':
