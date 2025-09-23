@@ -45,3 +45,9 @@ class Model:
         self.objective = None
         self.constraints = []
         self.variables = []
+
+    def __str__(self):
+        out = [str(self.objective)]
+        for c in self.constraints:
+            out.append(str(c))
+        return '\n'.join(out)

@@ -34,7 +34,7 @@ def main(filename, solver, method):
 
     model = simplex.core.Model.parse_str(raw)
     print('Parsed program:')
-    out = formatter.format_model(model)
+    out = str(model)
     for line in out.split('\n'):
             print(f'    {line}')
     tmp = out
