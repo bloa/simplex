@@ -50,11 +50,11 @@ def main(filename, solver, method, latex):
     print('[2] NORMALISING')
     print('----------------------------------------')
     solver.do_normalize(model)
-    if str(model) == tmp:
+    out = formatter.format_model(model)
+    if out == tmp:
         print('Program already normalised')
     else:
         print('Normalised program:')
-        out = formatter.format_model(model)
         for line in out.split('\n'):
             print(f'    {line}')
         tmp = out
