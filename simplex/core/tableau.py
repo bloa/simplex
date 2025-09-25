@@ -58,6 +58,12 @@ class Tableau:
             if isinstance(node, BinaryOp) and node.op == '*':
                 acc[node.right.name] = node.left
                 acc[''] = Literal(0)
+            if isinstance(node, UnaryOp) and node.op == '-':
+                if isinstance(node.right, Literal):
+                    acc[''] = Literal(-node.right.value)
+                else:
+                    acc[node.right.name] = Literal(-1)
+                    acc[''] = Literal(0)
             if isinstance(node, Variable):
                 acc[node.name] = Literal(1)
             if isinstance(node, Literal):
@@ -98,20 +104,15 @@ class Tableau:
 
     def pivot(self, var_in, var_out):
         assert var_out in self.basis
-        assert var_in not in self.basis
+        assert var_in == var_out or var_in not in self.basis
 
         # find pivot line
-        for i, line_out in enumerate(self.data):
-            if i == 0:
-                continue
-            if line_out[var_out].evaluate({}) == 1:
-                break
-
-        # find pivot coef
-        coef = line_out[var_in]
-        assert coef.evaluate({}) != 0
+        i = self.basis.index(var_out)+1
+        line_out = self.data[i]
 
         # normalize pivot line
+        coef = line_out[var_in]
+        assert coef.evaluate({}) != 0
         for v in self.columns:
             line_out[v] = BinaryOp('/', line_out[v], coef)
 

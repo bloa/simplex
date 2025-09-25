@@ -23,10 +23,12 @@ To try the solver, run it on the provided example problems:
 python3 simplex --program examples/test_solved1
 ```
 
-You can choose between a tableau-based (with `tableau` or `compact`) or dictionary-based (with `dictionnary`, the default) representation using `--method`:
+You can choose between the big-M (with `bigm`, the default) and the Two-Phase (`twophase`) methods using `--solver`.
+You can choose between a tableau-based (with `tableau` or `compact`) or dictionary-based (with `dictionnary`, the default) representation using `--method`.
+For example:
 
 ```bash
-python3 simplex --program examples/test_unbounded1 --method tableau
+python3 simplex --program examples/test_solved6 --solver twophase --method tableau
 ```
 
 LaTeX formatting is supported through the `--latex` option:

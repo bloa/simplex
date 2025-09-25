@@ -12,21 +12,31 @@ def main(filename, solver, method, latex):
     match solver:
         case 'bigm':
             solver = simplex.solvers.BigmSimplexSolver()
+        case 'twophase' | '2phase':
+            solver = simplex.solvers.TwophaseSimplexSolver()
+        case _:
+            msg = f'Unknown solver: {solver}'
+            raise ValueError(msg)
     match method:
-        case 'tableau' if latex:
-            formatter = simplex.formatters.TableauLatexFormatter()
-        case 'compact' if latex:
-            formatter = simplex.formatters.TableauLatexFormatter()
-            formatter.compact = True
-        case 'dictionary' if latex:
-            formatter = simplex.formatters.DictLatexFormatter()
         case 'tableau':
-            formatter = simplex.formatters.TableauCliFormatter()
+            if latex:
+                formatter = simplex.formatters.TableauLatexFormatter()
+            else:
+                formatter = simplex.formatters.TableauCliFormatter()
         case 'compact':
-            formatter = simplex.formatters.TableauCliFormatter()
+            if latex:
+                formatter = simplex.formatters.TableauLatexFormatter()
+            else:
+                formatter = simplex.formatters.TableauCliFormatter()
             formatter.compact = True
-        case 'dictionary':
-            formatter = simplex.formatters.DictCliFormatter()
+        case 'dict' | 'dictionary':
+            if latex:
+                formatter = simplex.formatters.DictLatexFormatter()
+            else:
+                formatter = simplex.formatters.DictCliFormatter()
+        case _:
+            msg = f'Unknown method: {method}'
+            raise ValueError(msg)
     solver.formatter = formatter
 
     print('[1] PARSING INPUT')
@@ -94,8 +104,8 @@ def main(filename, solver, method, latex):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Simplex')
     parser.add_argument('--program', type=pathlib.Path, required=True)
-    parser.add_argument('--solver', type=str, default='bigm', choices={'bigm'})
-    parser.add_argument('--method', type=str, default='dictionary', choices={'tableau', 'compact', 'dictionary'})
+    parser.add_argument('--solver', type=str, default='bigm', choices={'bigm', 'twophase', '2phase'})
+    parser.add_argument('--method', type=str, default='dictionary', choices={'tableau', 'compact', 'dict', 'dictionary'})
     parser.add_argument('--latex', action='store_true')
     args = parser.parse_args()
 

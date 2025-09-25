@@ -177,6 +177,8 @@ class Rewriter:
                     # simplify literal fractions
                     if isinstance(node.left, Literal) and isinstance(node.right, Literal):
                         if abs(node.left.value) == float('inf'):
+                            if abs(node.right.value) == float('inf'):
+                                return (1 if node.left.value > 0 else -1) * (1 if node.right.value > 0 else -1)
                             return node.left
                         if node.right.value == 1:
                             return node.left

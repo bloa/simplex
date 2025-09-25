@@ -7,10 +7,7 @@ from simplex.__main__ import main
 
 
 prog_files = []
-solvers = ['bigm']
-methods = ['dictionary', 'tableau', 'compact']
-latex = [True, False]
-for k, txt in enumerate(pathlib.Path().glob('*examples*/*')):
+for txt in pathlib.Path().glob('*examples*/*'):
     print(txt)
     with pathlib.Path.open(txt, 'r') as f:
         raw = f.read()
@@ -19,9 +16,16 @@ for k, txt in enumerate(pathlib.Path().glob('*examples*/*')):
         if m := re.match(r'# expected (.*) = (.*)', line):
             expected[m.group(1)] = m.group(2)
     if expected:
-        prog_files.append((txt, expected, solvers[k%len(solvers)], methods[k%len(methods)], latex[k%len(latex)]))
+        prog_files.append((txt, expected))
 
-@pytest.mark.parametrize(('filename', 'expected', 'solver', 'method', 'latex'), prog_files, ids=str)
+main_params = []
+for (txt, expected) in prog_files:
+    for solver in ['bigm', 'twophase']:
+        for method in ['dictionary', 'tableau', 'compact']:
+            for latex in [True, False]:
+                main_params.append((txt, expected, solver, method, latex))
+
+@pytest.mark.parametrize(('filename', 'expected', 'solver', 'method', 'latex'), main_params, ids=str)
 def test_main(filename, expected, solver, method, latex):
     summary = main(filename, solver, method, latex)
     print('expected', expected)

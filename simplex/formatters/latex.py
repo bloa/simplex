@@ -1,7 +1,7 @@
 import re
 
 from simplex.core import AbstractFormatter
-from simplex.parsing import BinaryOp, Literal, Variable
+from simplex.parsing import BinaryOp, Literal, UnaryOp, Variable
 from simplex.utils import prefix_sort
 
 
@@ -36,6 +36,9 @@ class AbstractLatexFormatter(AbstractFormatter):
                     pseudo_visitor(node.right, acc)
                 case BinaryOp(op='*'):
                     acc[node.right.name] = self.math_to_latex(node.left.value)
+                case UnaryOp(op='-'):
+                    pseudo_visitor(node.right, acc)
+                    acc[node.right.name] = '-' + acc[node.right.name]
                 case Variable():
                     acc[node.name] = ''
                 case BinaryOp(op='<=') | BinaryOp(op='>=') | BinaryOp(op='==') | BinaryOp(op='='):
