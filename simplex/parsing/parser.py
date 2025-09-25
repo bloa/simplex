@@ -107,8 +107,10 @@ class Parser:
                 expr_left = BinaryOp(token.value, expr_left, self.parse_atom())
             elif isinstance(expr_left, Literal):
                 expr_left = BinaryOp('*', expr_left, Variable(token.value))
+            elif isinstance(expr_left, UnaryOp):
+                expr_left = BinaryOp('*', expr_left, Variable(token.value))
             else:
-                msg = f'Unexpected token {token}'
+                msg = f'Unexpected token {token} after {expr_left}'
                 raise SyntaxError(msg)
         return expr_left
 
