@@ -15,8 +15,7 @@ for txt in pathlib.Path().glob('*examples*/*'):
     for line in raw.split('\n'):
         if m := re.match(r'# expected (.*) = (.*)', line):
             expected[m.group(1)] = m.group(2)
-    if expected:
-        prog_files.append((txt, expected))
+    prog_files.append((txt, expected))
 
 main_params = []
 for (txt, expected) in prog_files:
@@ -28,10 +27,11 @@ for (txt, expected) in prog_files:
 @pytest.mark.parametrize(('filename', 'expected', 'solver', 'method', 'latex'), main_params, ids=str)
 def test_main(filename, expected, solver, method, latex):
     summary = main(filename, solver, method, latex)
-    print('expected', expected)
-    print('summary', summary)
-    for k, v in expected.items():
-        try:
-            assert str(summary[k]) == v
-        except KeyError:
-            assert str(summary['values'][k]) == v
+    if expected:
+        print('expected', expected)
+        print('summary', summary)
+        for k, v in expected.items():
+            try:
+                assert str(summary[k]) == v
+            except KeyError:
+                assert str(summary['values'][k]) == v
