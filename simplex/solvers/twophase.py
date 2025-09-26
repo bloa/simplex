@@ -63,8 +63,9 @@ class TwophaseSimplexSolver(BasicSimplexSolver):
             print()
             if self.artificial_variables:
                 print(self.formatter.format_section('Phase II: Initial Problem'))
-                tmp_tableau = Tableau(model.objective, model.constraints, self.tableau.basis)
-                self.tableau.data[0] = tmp_tableau.data[0]
+                tmp_tableau = self.tableau
+                self.tableau = Tableau(model.objective, model.constraints, self.tableau.basis)
+                self.tableau.data[1:] = tmp_tableau.data[1:]
                 for var in self.artificial_variables:
                     self.tableau.delete(var)
                 for var in self.tableau.basis:
