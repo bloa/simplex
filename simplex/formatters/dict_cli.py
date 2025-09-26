@@ -5,6 +5,9 @@ from simplex.parsing import UnaryOp, MathTree
 
 
 class DictCliFormatter(AbstractCliFormatter):
+    def __init__(self):
+        self.opposite_obj = True
+
     def format_tableau(self, tableau):
         out = []
         # sizes for alignment
@@ -12,9 +15,9 @@ class DictCliFormatter(AbstractCliFormatter):
         just = {v: 0 for v in tableau.columns}
         for line in tableau.data:
             for v in tableau.columns:
-                t = MathTree(UnaryOp('-', line[v]))
-                Rewriter().normalize(t)
-                just[v] = max(just[v], len(str(t)), len(str(line[v])))
+                e = MathTree(UnaryOp('-', line[v]))
+                Rewriter().normalize(e)
+                just[v] = max(just[v], len(str(e)), len(str(line[v])))
         for v in tableau.columns:
             just[v] += len(v) + (1 if v else 0)
         # objective

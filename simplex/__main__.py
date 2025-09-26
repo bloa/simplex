@@ -21,11 +21,22 @@ def main(filename, solver, method, latex):
                 formatter = simplex.formatters.TableauLatexFormatter()
             else:
                 formatter = simplex.formatters.TableauCliFormatter()
+        case 'tableau_alt':
+            if latex:
+                formatter = simplex.formatters.TableauAltLatexFormatter()
+            else:
+                formatter = simplex.formatters.TableauAltCliFormatter()
         case 'compact':
             if latex:
                 formatter = simplex.formatters.TableauLatexFormatter()
             else:
                 formatter = simplex.formatters.TableauCliFormatter()
+            formatter.compact = True
+        case 'compact_alt':
+            if latex:
+                formatter = simplex.formatters.TableauAltLatexFormatter()
+            else:
+                formatter = simplex.formatters.TableauAltCliFormatter()
             formatter.compact = True
         case 'dict' | 'dictionary':
             if latex:
@@ -89,7 +100,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Simple Simplex Solver')
     parser.add_argument('--program', type=pathlib.Path, required=True)
     parser.add_argument('--solver', type=str, default='bigm', choices={'bigm', 'twophase', '2phase'})
-    parser.add_argument('--method', type=str, default='dictionary', choices={'tableau', 'compact', 'dict', 'dictionary'})
+    parser.add_argument('--method', type=str, default='dictionary', choices={'tableau', 'compact', 'tableau_alt', 'compact_alt', 'dict', 'dictionary'})
     parser.add_argument('--latex', action='store_true')
     args = parser.parse_args()
 

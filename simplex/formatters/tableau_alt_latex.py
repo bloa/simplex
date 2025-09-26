@@ -4,10 +4,10 @@ from simplex.core import Rewriter
 from simplex.parsing import UnaryOp, MathTree
 
 
-class TableauLatexFormatter(AbstractLatexFormatter):
+class TableauAltLatexFormatter(AbstractLatexFormatter):
     def __init__(self):
         self.compact = False
-        self.opposite_obj = False
+        self.opposite_obj = True
 
     def format_tableau(self, tableau):
         out = []
@@ -33,17 +33,32 @@ class TableauLatexFormatter(AbstractLatexFormatter):
         out.append(r'    \hline')
         # data
         for j, line in enumerate(tableau.data):
+            # skip objective
+            if j == 0:
+                continue
             tmp = []
             for var in tableau.columns:
                 if self.compact and var in tableau.basis:
                     continue
                 tmp.append(self.math_to_latex(line[var]).rjust(just[var]))
             tmp.append('=')
-            e = tableau.objective.root.var if j == 0 else tableau.basis[j-1]
-            tmp.append(self.math_to_latex(e).rjust(head_just))
+            tmp.append(self.math_to_latex(tableau.basis[j-1]).rjust(head_just))
             out.append('    ' + ' & '.join(tmp) + r'\\')
-            if j == 0:
-                out.append(r'    \hline')
+        # objective
+        out.append(r'    \hline')
+        line = tableau.data[0]
+        tmp = []
+        for var in tableau.columns:
+            if self.compact and var in tableau.basis:
+                continue
+            e = MathTree(UnaryOp('-', line[var]))
+            Rewriter().normalize(e)
+            tmp.append(self.math_to_latex(e).rjust(just[var]))
+        tmp.append('=')
+        e = MathTree(UnaryOp('-', tableau.objective.root.var))
+        Rewriter().normalize(e)
+        tmp.append(self.math_to_latex(e).rjust(head_just))
+        out.append('    ' + ' & '.join(tmp) + r'\\')
         # footer
         out.append(r'  \end{array}')
         out.append(r'\end{equation*}')

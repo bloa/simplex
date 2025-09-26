@@ -24,7 +24,7 @@ python3 simplex --program examples/test_solved1
 ```
 
 You can choose between the big-M (with `bigm`, the default) and the Two-Phase (`twophase`) methods using `--solver`.
-You can choose between a tableau-based (with `tableau` or `compact`) or dictionary-based (with `dictionnary`, the default) representation using `--method`.
+You can choose between a tableau-based (with `tableau`, `compact`, `tableau_alt`, or `compact_alt`) or dictionary-based (with `dict`, the default) representation using `--method`.
 For example:
 
 ```bash

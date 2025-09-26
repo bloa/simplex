@@ -1,10 +1,13 @@
 from .cli import AbstractCliFormatter
 
+from simplex.core import Rewriter
+from simplex.parsing import UnaryOp, MathTree
 
-class TableauCliFormatter(AbstractCliFormatter):
+
+class TableauAltCliFormatter(AbstractCliFormatter):
     def __init__(self):
         self.compact = False
-        self.opposite_obj = False
+        self.opposite_obj = True
 
     def format_tableau(self, tableau):
         out = []
@@ -13,7 +16,9 @@ class TableauCliFormatter(AbstractCliFormatter):
         just = {v: len(v) for v in tableau.columns}
         for line in tableau.data:
             for v in tableau.columns:
-                just[v] = max(just[v], len(str(line[v])))
+                e = MathTree(UnaryOp('-', line[v]))
+                Rewriter().normalize(e)
+                just[v] = max(just[v], len(str(e)), len(str(line[v])))
         # header
         tmp = []
         sep = []
@@ -31,6 +36,9 @@ class TableauCliFormatter(AbstractCliFormatter):
         out.append(''.join(sep))
         # data
         for j, line in enumerate(tableau.data):
+            # skip objective
+            if j == 0:
+                continue
             tmp = []
             for k, v in enumerate(line):
                 if self.compact and v in tableau.basis:
@@ -39,7 +47,24 @@ class TableauCliFormatter(AbstractCliFormatter):
                     tmp.append('  ' if v else ' | ')
                 tmp.append(str(line[v]).rjust(just[v]))
             tmp.append(' = ')
-            e = tableau.objective.root.var if j == 0 else tableau.basis[j-1]
-            tmp.append(str(e).rjust(head_just))
+            tmp.append(str(tableau.basis[j-1]).rjust(head_just))
             out.append(''.join(tmp))
+        # objective
+        out.append(''.join(sep))
+        line = tableau.data[0]
+        tmp = []
+        for k, v in enumerate(line):
+            if self.compact and v in tableau.basis:
+                continue
+            if k > 0:
+                tmp.append('  ' if v else ' | ')
+            e = MathTree(UnaryOp('-', line[v]))
+            Rewriter().normalize(e)
+            tmp.append(str(e).rjust(just[v]))
+        tmp.append(' = ')
+        e = MathTree(UnaryOp('-', tableau.objective.root.var))
+        Rewriter().normalize(e)
+        tmp.append(str(e).rjust(head_just))
+        out.append(''.join(tmp))
+
         return self.indent(out)

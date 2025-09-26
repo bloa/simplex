@@ -5,6 +5,9 @@ from simplex.parsing import UnaryOp, MathTree
 
 
 class DictLatexFormatter(AbstractLatexFormatter):
+    def __init__(self):
+        self.opposite_obj = True
+
     def format_tableau(self, tableau):
         out = []
         out.append(r'\begin{equation*}')

@@ -452,15 +452,26 @@ class BasicSimplexSolver(AbstractSolver):
         print(self.formatter.format_step('Simplex step'))
         print('Searching for a variable to enter the basis')
         candidates = [v for v in self.tableau.variables if v not in self.tableau.basis]
-        coefs = self.tableau.coefs_obj_neg(candidates)
-        candidates = [v for v in candidates if coefs[v] > 0]
-        if not candidates:
-            print('   ... none strictly positive')
-            self.summary['status'] = 'SOLVED'
-            return
-        print('    coefs:', *(f'{v}:{round(x, 8)}' for v, x in coefs.items()))
-        var_in = max(candidates, key=lambda v: coefs[v])
-        print(f'    -> {var_in} (max positive coef)')
+        if self.formatter.opposite_obj:
+            coefs = self.tableau.coefs_obj_neg(candidates)
+            candidates = [v for v in candidates if coefs[v] > 0]
+            if not candidates:
+                print('   ... none strictly positive')
+                self.summary['status'] = 'SOLVED'
+                return
+            print('    coefs:', *(f'{v}:{round(x, 8)}' for v, x in coefs.items()))
+            var_in = max(candidates, key=lambda v: coefs[v])
+            print(f'    -> {var_in} (max positive coef)')
+        else:
+            coefs = self.tableau.coefs_obj(candidates)
+            candidates = [v for v in candidates if coefs[v] < 0]
+            if not candidates:
+                print('   ... none strictly negative')
+                self.summary['status'] = 'SOLVED'
+                return
+            print('    coefs:', *(f'{v}:{round(x, 8)}' for v, x in coefs.items()))
+            var_in = min(candidates, key=lambda v: coefs[v])
+            print(f'    -> {var_in} (min negative coef)')
 
         print('Searching for a variable to exit the basis')
         col_lit = self.tableau.coefs_column('')

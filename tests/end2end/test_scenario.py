@@ -20,7 +20,7 @@ for txt in pathlib.Path().glob('*examples*/*'):
 main_params = []
 for (txt, expected) in prog_files:
     for solver in ['bigm', 'twophase']:
-        for method in ['dictionary', 'tableau', 'compact']:
+        for method in ['dictionary', 'tableau', 'compact', 'tableau_alt', 'compact_alt']:
             for latex in [True, False]:
                 main_params.append((txt, expected, solver, method, latex))
 
