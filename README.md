@@ -37,6 +37,13 @@ LaTeX formatting is supported through the `--latex` option:
 python3 simplex --program examples/test_solved4 --method compact --latex
 ```
 
+In doubt, consult the help message:
+
+```bash
+python3 simplex --help
+```
+
+
 ## Testing
 
 Run the test suite with [pytest](https://pytest.org/):
@@ -51,5 +58,4 @@ Contributions are welcome via pull requests.
 
 Planned improvements include:
 - interactive mode for selecting pivots
-- support for the two-phase resolution method
 - support for solving through the dual problem

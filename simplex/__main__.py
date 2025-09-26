@@ -86,7 +86,7 @@ def main(filename, solver, method, latex):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Simplex')
+    parser = argparse.ArgumentParser(description='Simple Simplex Solver')
     parser.add_argument('--program', type=pathlib.Path, required=True)
     parser.add_argument('--solver', type=str, default='bigm', choices={'bigm', 'twophase', '2phase'})
     parser.add_argument('--method', type=str, default='dictionary', choices={'tableau', 'compact', 'dict', 'dictionary'})
