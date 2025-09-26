@@ -16,28 +16,19 @@ def main(filename, solver, method, latex):
         case 'twophase' | '2phase':
             solver = simplex.solvers.TwophaseSimplexSolver()
     match method:
-        case 'tableau':
+        case 'tableau' | 'tableau_alt':
             if latex:
                 formatter = simplex.formatters.TableauLatexFormatter()
             else:
                 formatter = simplex.formatters.TableauCliFormatter()
-        case 'tableau_alt':
-            if latex:
-                formatter = simplex.formatters.TableauAltLatexFormatter()
-            else:
-                formatter = simplex.formatters.TableauAltCliFormatter()
-        case 'compact':
+            formatter.opposite_obj = 'alt' not in method
+        case 'compact' | 'compact_alt':
             if latex:
                 formatter = simplex.formatters.TableauLatexFormatter()
             else:
                 formatter = simplex.formatters.TableauCliFormatter()
             formatter.compact = True
-        case 'compact_alt':
-            if latex:
-                formatter = simplex.formatters.TableauAltLatexFormatter()
-            else:
-                formatter = simplex.formatters.TableauAltCliFormatter()
-            formatter.compact = True
+            formatter.opposite_obj = 'alt' not in method
         case 'dict' | 'dictionary':
             if latex:
                 formatter = simplex.formatters.DictLatexFormatter()

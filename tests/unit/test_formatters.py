@@ -38,22 +38,45 @@ def test_model(mock_model):
     assert formatter.format_model(mock_model) == expected
 
 def test_to_tab(mock_tableau):
-    expected = """    x1  x2  s1  s2 |       
-    ---------------+---=---
-    -1  -2   0   0 | 0 =  z
-     3   0   1   0 | 4 = s1
-     0   5   0   1 | 6 = s2"""
+    expected = """    x1  x2  s1  s2 |        
+    ---------------+----=---
+     3   0   1   0 |  4 = s1
+     0   5   0   1 |  6 = s2
+    ---------------+----=---
+     1   2   0   0 |  0 = -z"""
     formatter = TableauCliFormatter()
     assert formatter.format_tableau(mock_tableau) == expected
 
 def test_to_compact(mock_tableau):
-    expected = """    x1  x2 |       
-    -------+---=---
-    -1  -2 | 0 =  z
-     3   0 | 4 = s1
-     0   5 | 6 = s2"""
+    expected = """    x1  x2 |        
+    -------+----=---
+     3   0 |  4 = s1
+     0   5 |  6 = s2
+    -------+----=---
+     1   2 |  0 = -z"""
     formatter = TableauCliFormatter()
     formatter.compact = True
+    assert formatter.format_tableau(mock_tableau) == expected
+
+def test_to_tab_alt(mock_tableau):
+    expected = """    x1  x2  s1  s2 |        
+    ---------------+----=---
+    -1  -2   0   0 |  0 =  z
+     3   0   1   0 |  4 = s1
+     0   5   0   1 |  6 = s2"""
+    formatter = TableauCliFormatter()
+    formatter.opposite_obj = False
+    assert formatter.format_tableau(mock_tableau) == expected
+
+def test_to_compact_alt(mock_tableau):
+    expected = """    x1  x2 |        
+    -------+----=---
+    -1  -2 |  0 =  z
+     3   0 |  4 = s1
+     0   5 |  6 = s2"""
+    formatter = TableauCliFormatter()
+    formatter.compact = True
+    formatter.opposite_obj = False
     assert formatter.format_tableau(mock_tableau) == expected
 
 def test_to_dict(mock_tableau):
@@ -81,13 +104,14 @@ def test_to_latex_tab(mock_tableau):
   \begin{array}{rrrr|rcr}
     x1 & x2 & s1 & s2\\
     \hline
-    -1 & -2 &  0 &  0 &  0 & = &  z\\
-    \hline
      3 &  0 &  1 &  0 &  4 & = & s1\\
      0 &  5 &  0 &  1 &  6 & = & s2\\
+    \hline
+     1 &  2 &  0 &  0 &  0 & = & -z\\
   \end{array}
 \end{equation*}"""
     formatter = TableauLatexFormatter()
+    formatter.opposite_obj = True
     assert formatter.format_tableau(mock_tableau) == expected
 
 def test_to_latex_compact(mock_tableau):
@@ -95,14 +119,44 @@ def test_to_latex_compact(mock_tableau):
   \begin{array}{rr|rcr}
     x1 & x2\\
     \hline
-    -1 & -2 &  0 & = &  z\\
+     3 &  0 &  4 & = & s1\\
+     0 &  5 &  6 & = & s2\\
     \hline
+     1 &  2 &  0 & = & -z\\
+  \end{array}
+\end{equation*}"""
+    formatter = TableauLatexFormatter()
+    formatter.compact = True
+    formatter.opposite_obj = True
+    assert formatter.format_tableau(mock_tableau) == expected
+
+def test_to_latex_tab_alt(mock_tableau):
+    expected = r"""\begin{equation*}
+  \begin{array}{rrrr|rcr}
+    x1 & x2 & s1 & s2\\
+    \hline
+    -1 & -2 &  0 &  0 &  0 & = &  z\\
+     3 &  0 &  1 &  0 &  4 & = & s1\\
+     0 &  5 &  0 &  1 &  6 & = & s2\\
+  \end{array}
+\end{equation*}"""
+    formatter = TableauLatexFormatter()
+    formatter.opposite_obj = False
+    assert formatter.format_tableau(mock_tableau) == expected
+
+def test_to_latex_compact_alt(mock_tableau):
+    expected = r"""\begin{equation*}
+  \begin{array}{rr|rcr}
+    x1 & x2\\
+    \hline
+    -1 & -2 &  0 & = &  z\\
      3 &  0 &  4 & = & s1\\
      0 &  5 &  6 & = & s2\\
   \end{array}
 \end{equation*}"""
     formatter = TableauLatexFormatter()
     formatter.compact = True
+    formatter.opposite_obj = False
     assert formatter.format_tableau(mock_tableau) == expected
 
 def test_to_latex_dict(mock_tableau):
