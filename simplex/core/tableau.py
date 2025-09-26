@@ -8,12 +8,10 @@ from .rewriter import Rewriter
 class Tableau:
     def __init__(self, objective, constraints, basis):
         tmp = objective.variables
-        obj_e = objective.root.var
-        while True:
-            if isinstance(obj_e, Variable):
-                break
-            obj_e = obj_e.right
-        tmp.remove(obj_e.name)
+        obj_v = objective.root.var
+        while not isinstance(obj_v, Variable):
+            obj_v = obj_v.right
+        tmp.remove(obj_v.name)
         for c in constraints:
             tmp += c.variables
         self.variables = prefix_unique(tmp)
@@ -112,9 +110,10 @@ class Tableau:
 
         # normalize pivot line
         coef = line_out[var_in]
-        assert coef.evaluate({}) != 0
-        for v in self.columns:
-            line_out[v] = BinaryOp('/', line_out[v], coef)
+        assert str(coef) != '0'
+        if str(coef) != '1':
+            for v in self.columns:
+                line_out[v] = BinaryOp('/', line_out[v], coef)
 
         # update all other lines
         for j, line in enumerate(self.data):

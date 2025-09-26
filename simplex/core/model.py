@@ -52,6 +52,5 @@ class Model:
 
     def __str__(self):
         out = [str(self.objective)]
-        for c in self.constraints:
-            out.append(str(c))
+        out.extend(str(c) for c in self.constraints)
         return '\n'.join(out)

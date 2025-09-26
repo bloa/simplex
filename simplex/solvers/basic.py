@@ -21,41 +21,48 @@ class BasicSimplexSolver(AbstractSolver):
         self.initial_variables = model.variables[:]
         self.artificial_variables = []
         self.initial_basis = []
-        tmp = self.formatter.format_model(model)
+
+        print(self.formatter.format_section('Preparation Steps'))
+
+        print(self.formatter.format_step('Normalizing'))
+        self.do_normalize(model)
+        out = self.formatter.format_model(model)
+        tmp = str(model)
+        if out == tmp:
+            print('Program already normalised')
+        else:
+            print('Normalised program:')
+            print(out)
+            tmp = out
 
         if self.summary['status'] == '???':
             print()
-            print('[3.1] CONVERTING TO CANONICAL FORM')
-            print('-----------------------------------')
+            print(self.formatter.format_step('Canonical form'))
             self.do_canonical(model)
             out = self.formatter.format_model(model)
             if out == tmp:
                 print('Program already in canonical form')
             else:
                 print('Program in canonical form:')
-                for line in out.split('\n'):
-                    print(f'    {line}')
+                print(out)
                 tmp = out
             self.do_trivial_check(model)
             out = self.formatter.format_model(model)
             if self.summary['status'] == '???' and out != tmp:
                 print('Program in canonical form: (reordered)')
-                for line in out.split('\n'):
-                    print(f'    {line}')
+                print(out)
                 tmp = out
 
         if self.summary['status'] == '???':
             print()
-            print('[3.2] CONVERTING TO STANDARD FORM')
-            print('-----------------------------------')
+            print(self.formatter.format_step('Standard form'))
             self.do_standard(model)
             out = self.formatter.format_model(model)
             if out == tmp:
                 print('Program already in standard form')
             else:
                 print('Program in standard form:')
-                for line in out.split('\n'):
-                    print(f'    {line}')
+                print(out)
 
     def _cut_and_add(self, expr, acc, accstr):
         if isinstance(expr.root, ExprList):
@@ -103,6 +110,8 @@ class BasicSimplexSolver(AbstractSolver):
             print(f'... renaming "{oldvar}" into "{newvar}"')
             model.objective.rename(oldvar, newvar)
             self.renames[oldvar] = MathTree(Variable(newvar))
+            model.variables.remove(oldvar)
+            model.variables.append(newvar)
 
         # then rename variables
         varid = 1
@@ -177,11 +186,12 @@ class BasicSimplexSolver(AbstractSolver):
                     model.variables.remove(oldvar)
                 if oldvar in self.initial_variables:
                     self.initial_variables.remove(oldvar)
-                self.renames = {k:v for k, v in self.renames.items() if oldvar not in v.variables}
+                for v in self.renames.values():
+                    v.replace(oldvar, Literal(0))
                 if oldvar in self.renames:
                     del self.renames[oldvar]
-                model.constraints = [c for c in model.constraints if oldvar not in c.variables]
                 print('... removing associated constraints')
+                model.constraints = [c for c in model.constraints if oldvar not in c.variables]
                 continue
             # for debug: varmin <= oldvar <= varmax
             def to_expr(s):
@@ -332,6 +342,41 @@ class BasicSimplexSolver(AbstractSolver):
         for c in model.constraints:
             self.rewriter.do_canonical(c)
 
+    def do_standard(self, model):
+        self.do_canonical(model)
+        # introduce slack variables
+        self.initial_basis = []
+        self.artificial_variables = []
+        for c in model.constraints[:]:
+            newvar = self.names['slack']
+            if c.root.op == '<=':
+                varid = 1
+                while f'{newvar}{varid}' in model.variables:
+                    varid += 1
+                c.root = BinaryOp('==', BinaryOp('+', c.root.left, Variable(f'{newvar}{varid}')), c.root.right)
+                c.variables.append(f'{newvar}{varid}')
+                self.rewriter.normalize(c)
+                model.variables.append(f'{newvar}{varid}')
+                model.constraints.append(BoolTree(BinaryOp('>=', Variable(f'{newvar}{varid}'), Literal(0))))
+                # introduce artificial variables
+                if c.root.right.evaluate({}) < 0:
+                    print('problem: negative right-hand side')
+                    newvar = self.names['artificial']
+                    varid = 1
+                    while f'{newvar}{varid}' in model.variables:
+                        varid += 1
+                    c.root = BinaryOp('==', BinaryOp('+', UnaryOp('-', c.root.left), Variable(f'{newvar}{varid}')), UnaryOp('-', c.root.right))
+                    c.variables.append(f'{newvar}{varid}')
+                    model.constraints.append(BoolTree(BinaryOp('>=', Variable(f'{newvar}{varid}'), Literal(0))))
+                    model.variables.append(f'{newvar}{varid}')
+                    self.artificial_variables.append(f'{newvar}{varid}')
+                    print(f'... introduced artificial variable {newvar}{varid} >= 0')
+                self.initial_basis.append(f'{newvar}{varid}')
+        model.objective.variables = prefix_sort(model.objective.variables)
+        self.rewriter.normalize(model.objective)
+        for c in model.constraints:
+            self.rewriter.normalize(c)
+
     def do_trivial_check(self, model):
         # fail on "False"
         if any(str(c) == 'False' for c in model.constraints):
@@ -404,6 +449,7 @@ class BasicSimplexSolver(AbstractSolver):
                 msg = 'negative RHS for basic variable?!'
                 raise RuntimeError(msg)
 
+        print(self.formatter.format_step('Simplex step'))
         print('Searching for a variable to enter the basis')
         candidates = [v for v in self.tableau.variables if v not in self.tableau.basis]
         coefs = self.tableau.coefs_obj_neg(candidates)

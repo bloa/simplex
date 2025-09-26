@@ -9,14 +9,12 @@ import simplex
 
 
 def main(filename, solver, method, latex):
+    # resolve CLI parameters
     match solver:
         case 'bigm':
             solver = simplex.solvers.BigmSimplexSolver()
         case 'twophase' | '2phase':
             solver = simplex.solvers.TwophaseSimplexSolver()
-        case _:
-            msg = f'Unknown solver: {solver}'
-            raise ValueError(msg)
     match method:
         case 'tableau':
             if latex:
@@ -34,49 +32,32 @@ def main(filename, solver, method, latex):
                 formatter = simplex.formatters.DictLatexFormatter()
             else:
                 formatter = simplex.formatters.DictCliFormatter()
-        case _:
-            msg = f'Unknown method: {method}'
-            raise ValueError(msg)
     solver.formatter = formatter
 
-    print('[1] PARSING INPUT')
-    print('----------------------------------------')
-    print(f'Raw input: ({filename})')
+    # parse input
+    print(formatter.format_section('Parsing Input'))
     with pathlib.Path.open(filename, 'r') as f:
         raw = f.read()
-    for line in raw.split('\n'):
-        if line.strip():
-            print(f'    {line}')
-    print()
+    out = formatter.format_raw_model(raw)
+    if out:
+        print(f'Raw input: ({filename})')
+        print(out)
+        print()
 
+    # print parsed program
     model = simplex.core.Model.parse_str(raw)
-    print('Parsed program:')
-    out = str(model)
-    for line in out.split('\n'):
-            print(f'    {line}')
-    tmp = out
+    out = formatter.format_raw_model(str(model))
+    if out:
+        print('Parsed program:')
+        print(out)
+        print()
 
-    print()
-    print('[2] NORMALISING')
-    print('----------------------------------------')
-    solver.do_normalize(model)
-    out = formatter.format_model(model)
-    if out == tmp:
-        print('Program already normalised')
-    else:
-        print('Normalised program:')
-        for line in out.split('\n'):
-            print(f'    {line}')
-        tmp = out
-
-    print()
-    print('[3] SOLVING')
-    print('----------------------------------------')
+    # call solver
     solver.solve(model)
 
+    # print solver summary
     print()
-    print('[4] SUMMARY')
-    print('----------------------------------------')
+    print(formatter.format_section('Summary'))
     status = solver.summary['status']
     print(f'Status: {status}')
     if solver.summary['values']:
@@ -89,7 +70,9 @@ def main(filename, solver, method, latex):
                 v2 = None
             if k in solver.renames:
                 e = solver.renames[k]
-                if v2:
+                if str(e) == str(v):
+                    print(f'    {k} = {v}')
+                elif v2:
                     print(f'    {k} = {e} = {v} = {round(v2, 8)}')
                 else:
                     print(f'    {k} = {e} = {v}')
@@ -98,6 +81,7 @@ def main(filename, solver, method, latex):
             else:
                 print(f'    {k} = {v}')
 
+    # return summary for automated testing purposes
     return solver.summary
 
 

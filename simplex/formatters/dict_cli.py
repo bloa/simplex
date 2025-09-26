@@ -62,4 +62,4 @@ class DictCliFormatter(AbstractCliFormatter):
                     tmp.append('   ')
                 tmp.append(s.rjust(just[v]))
             out.append(''.join(tmp))
-        return '\n'.join(out)
+        return self.indent(out)

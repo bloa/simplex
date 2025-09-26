@@ -41,4 +41,4 @@ class TableauCliFormatter(AbstractCliFormatter):
             e = tableau.objective.root.var if j == 0 else tableau.basis[j-1]
             tmp.append(str(e).rjust(head_just))
             out.append(''.join(tmp))
-        return '\n'.join(out)
+        return self.indent(out)

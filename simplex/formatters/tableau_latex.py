@@ -23,20 +23,20 @@ class TableauLatexFormatter(AbstractLatexFormatter):
                 just[v] = max(just[v], len(str(t)), len(str(line[v])))
         # header
         tmp = []
-        for k, v in enumerate(tableau.columns):
-            if self.compact and v in tableau.basis:
+        for var in tableau.columns:
+            if self.compact and var in tableau.basis:
                 continue
-            if v:
-                tmp.append(v.rjust(just[v]))
+            if var:
+                tmp.append(var.rjust(just[var]))
         out.append('    ' + ' & '.join(tmp) + r'\\')
         out.append(r'    \hline')
         # data
         for j, line in enumerate(tableau.data):
             tmp = []
-            for k, v in enumerate(line):
-                if self.compact and v in tableau.basis:
+            for var in tableau.columns:
+                if self.compact and var in tableau.basis:
                     continue
-                tmp.append(self.math_to_latex(line[v]).rjust(just[v]))
+                tmp.append(self.math_to_latex(line[var]).rjust(just[var]))
             tmp.append('=')
             e = tableau.objective.root.var if j == 0 else tableau.basis[j-1]
             tmp.append(self.math_to_latex(e).rjust(head_just))

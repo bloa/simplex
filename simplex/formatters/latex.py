@@ -28,6 +28,19 @@ class AbstractLatexFormatter(AbstractFormatter):
                 return r'\geq'
         return op
 
+    def format_section(self, title):
+        out = []
+        out.append(fr'\paragraph{{{title}}}')
+        return '\n'.join(out)
+
+    def format_step(self, title):
+        out = []
+        out.append(fr'\textbf{{{title}}}\\')
+        return '\n'.join(out)
+
+    def format_raw_model(self, raw):
+        return ''
+
     def format_model(self, model):
         def pseudo_visitor(node, acc):
             match node:
@@ -35,7 +48,7 @@ class AbstractLatexFormatter(AbstractFormatter):
                     pseudo_visitor(node.left, acc)
                     pseudo_visitor(node.right, acc)
                 case BinaryOp(op='*'):
-                    acc[node.right.name] = self.math_to_latex(node.left.value)
+                    acc[node.right.name] = self.math_to_latex(str(node.left))
                 case UnaryOp(op='-'):
                     pseudo_visitor(node.right, acc)
                     acc[node.right.name] = '-' + acc[node.right.name]
@@ -48,7 +61,6 @@ class AbstractLatexFormatter(AbstractFormatter):
                 case Literal():
                     acc['rhs'] = self.math_to_latex(node.value)
                 case _:
-                    print(node)
                     raise NotImplementedError
         def aux(tree, variables):
             # compute each coefficient
