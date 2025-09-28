@@ -3,6 +3,7 @@ import math
 from simplex.parsing import (
     BinaryOp,
     ExprList,
+    ExprTree,
     Literal,
     Objective,
     UnaryOp,
@@ -372,6 +373,11 @@ class Rewriter:
                 if node.op == '>=':
                     return binop('<=', unaop('-', node.left), unaop('-', node.right))
         return node
+
+    def normalize_tree(self, tree):
+        tmp = ExprTree(tree)
+        self.normalize(tmp)
+        return tmp.root
 
     def normalize(self, program):
         self.variables = program.variables[:]

@@ -8,11 +8,12 @@ sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
 import simplex
 
 
-def main(filename, solver, method, latex):
+def main(filename, solver, method, latex, m):
     # resolve CLI parameters
     match solver:
         case 'bigm':
             solver = simplex.solvers.BigmSimplexSolver()
+            solver.m = m
         case 'twophase' | '2phase':
             solver = simplex.solvers.TwophaseSimplexSolver()
     match method:
@@ -93,6 +94,7 @@ if __name__ == '__main__':
     parser.add_argument('--solver', type=str, default='bigm', choices={'bigm', 'twophase', '2phase'})
     parser.add_argument('--method', type=str, default='dictionary', choices={'tableau', 'compact', 'tableau_alt', 'compact_alt', 'dict', 'dictionary'})
     parser.add_argument('--latex', action='store_true')
+    parser.add_argument('--m', type=int, default=3628800)
     args = parser.parse_args()
 
-    main(args.program, args.solver, args.method, args.latex)
+    main(args.program, args.solver, args.method, args.latex, args.m)

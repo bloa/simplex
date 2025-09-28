@@ -74,23 +74,20 @@ class Tableau:
         return dict(acc)
 
     def coefs_obj(self, candidates):
+        return {k: self.data[0][k] for k in candidates}
+
+    def coefs_obj_old(self, candidates):
         return {k: self.data[0][k].evaluate({}) for k in candidates}
 
-    def coefs_obj_neg(self, candidates):
-        return {k: -self.data[0][k].evaluate({}) for k in candidates}
+    def coefs_row(self, row):
+        assert row in self.basis
+        return self.data[self.basis.index(row)+1]
 
     def coefs_column(self, col):
+        return {v: self.data[k+1][col] for k, v in enumerate(self.basis)}
+
+    def coefs_column_old(self, col):
         return {v: self.data[k+1][col].evaluate({}) for k, v in enumerate(self.basis)}
-
-    def row_for_basic(self, var):
-        assert var in self.basis
-        for row in self.data[1:]:
-            if row[var].evaluate({}) == 1:
-                return row
-        raise RuntimeError
-
-    def aux_art_candidates(self, taboo):
-        return [v for v in self.variables if v not in self.basis and v not in taboo]
 
     @staticmethod
     def aux_art_coefs(row_out, candidates):

@@ -1,3 +1,4 @@
+import random
 import re
 
 from simplex.core import AbstractSolver, Rewriter, Tableau
@@ -180,7 +181,7 @@ class BasicSimplexSolver(AbstractSolver):
                 else:
                     varmax = min(varmax, vright/vleft) if varmax else vright/vleft
             if not in_prog:
-                print(f'problem: {oldvar} is unused')
+                print(f'Problem: {oldvar} is unused')
                 model.variables.remove(oldvar)
                 if oldvar in model.variables:
                     model.variables.remove(oldvar)
@@ -202,7 +203,7 @@ class BasicSimplexSolver(AbstractSolver):
                 return tree.root
             if varmin is None:
                 if varmax is None:
-                    print(f'problem: {oldvar} is free')
+                    print(f'Problem: {oldvar} is free')
                     while f'{newvar}{varid}' in model.variables:
                         varid += 1
                     _varid = varid
@@ -226,7 +227,7 @@ class BasicSimplexSolver(AbstractSolver):
                     model.constraints.append(BoolTree.from_string(f'{newvar}{varid} >= 0'))
                     print(f'... introduced {newvar}{_varid} and {newvar}{varid} >= 0 such that {oldvar} = {newexpr})')
                 elif varmax == 0:
-                    print(f'problem: {oldvar} <= {to_norm(varmax)}')
+                    print(f'Problem: {oldvar} <= {to_norm(varmax)}')
                     while f'{newvar}{varid}' in model.variables:
                         varid += 1
                     newexpr = to_expr(f'-{newvar}{varid}')
@@ -244,7 +245,7 @@ class BasicSimplexSolver(AbstractSolver):
                     model.variables.append(f'{newvar}{varid}')
                     print(f'... introduced {newvar}{varid} = {newexpr2} >= 0 (i.e., {oldvar} = {newexpr})')
                 elif varmax > 0:
-                    print(f'problem: {oldvar} <= {to_norm(varmax)}')
+                    print(f'Problem: {oldvar} <= {to_norm(varmax)}')
                     while f'{newvar}{varid}' in model.variables:
                         varid += 1
                     newexpr = to_expr(f'-{newvar}{varid} + {to_norm(varmax)}')
@@ -262,7 +263,7 @@ class BasicSimplexSolver(AbstractSolver):
                     model.variables.append(f'{newvar}{varid}')
                     print(f'... introduced {newvar}{varid} = {newexpr2} >= 0 (i.e., {oldvar} = {newexpr})')
                 else:
-                    print(f'problem: {oldvar} <= {to_norm(varmax)}')
+                    print(f'Problem: {oldvar} <= {to_norm(varmax)}')
                     while f'{newvar}{varid}' in model.variables:
                         varid += 1
                     newexpr = to_expr(f'-{newvar}{varid} - {to_norm(-varmax)}')
@@ -280,7 +281,7 @@ class BasicSimplexSolver(AbstractSolver):
                     model.variables.append(f'{newvar}{varid}')
                     print(f'... introduced {newvar}{varid} = {newexpr2} >= 0 (i.e., {oldvar} = {newexpr})')
             elif varmin == varmax:
-                print(f'problem: {oldvar} == {to_norm(varmin)}')
+                print(f'Problem: {oldvar} == {to_norm(varmin)}')
                 newexpr = to_norm(varmin)
                 if oldvar in model.objective.variables:
                     model.objective.replace(Variable(oldvar), newexpr)
@@ -291,14 +292,14 @@ class BasicSimplexSolver(AbstractSolver):
                 self.summary['eliminated'][oldvar] = to_norm(varmin)
                 print(f'... eliminated {oldvar} everywhere')
             elif varmax and varmin > varmax:
-                print(f'problem: {oldvar} <= {to_norm(varmax)} and {oldvar} >= {to_norm(varmin)}')
+                print(f'Problem: {oldvar} <= {to_norm(varmax)} and {oldvar} >= {to_norm(varmin)}')
                 self.summary['status'] = 'INFEASIBLE'
                 return
             elif varmin > 0:
                 if varmax:
-                    print(f'problem: {to_norm(varmin)} <= {oldvar} <= {to_norm(varmax)}')
+                    print(f'Problem: {to_norm(varmin)} <= {oldvar} <= {to_norm(varmax)}')
                 else:
-                    print(f'problem: {to_norm(varmin)} <= {oldvar}')
+                    print(f'Problem: {to_norm(varmin)} <= {oldvar}')
                 while f'{newvar}{varid}' in model.variables:
                     varid += 1
                 newexpr = to_expr(f'{newvar}{varid} + {to_norm(varmin)}')
@@ -317,9 +318,9 @@ class BasicSimplexSolver(AbstractSolver):
                 print(f'... introduced {newvar}{varid} = {newexpr2} >= 0 (i.e., {oldvar} = {newexpr})')
             elif varmin < 0:
                 if varmax:
-                    print(f'problem: {to_norm(varmin)} <= {oldvar} <= {to_norm(varmax)}')
+                    print(f'Problem: {to_norm(varmin)} <= {oldvar} <= {to_norm(varmax)}')
                 else:
-                    print(f'problem: {to_norm(varmin)} <= {oldvar}')
+                    print(f'Problem: {to_norm(varmin)} <= {oldvar}')
                 while f'{newvar}{varid}' in model.variables:
                     varid += 1
                 newexpr = to_expr(f'{newvar}{varid} - {to_norm(-varmin)}')
@@ -360,7 +361,7 @@ class BasicSimplexSolver(AbstractSolver):
                 model.constraints.append(BoolTree(BinaryOp('>=', Variable(f'{newvar}{varid}'), Literal(0))))
                 # introduce artificial variables
                 if c.root.right.evaluate({}) < 0:
-                    print('problem: negative right-hand side')
+                    print('Problem: negative right-hand side')
                     newvar = self.names['artificial']
                     varid = 1
                     while f'{newvar}{varid}' in model.variables:
@@ -380,7 +381,7 @@ class BasicSimplexSolver(AbstractSolver):
     def do_trivial_check(self, model):
         # fail on "False"
         if any(str(c) == 'False' for c in model.constraints):
-            print('problem: there are trivially False constraints')
+            print('Problem: there are trivially False constraints')
             self.summary['status'] = 'INFEASIBLE'
             return
         # remove "True"
@@ -393,7 +394,7 @@ class BasicSimplexSolver(AbstractSolver):
         # reorder "<=" before ">="
         tmp1 = [c for c in model.constraints if c.root.op == '<=']
         if not tmp1:
-            print('problem: there is no (<=) constraint')
+            print('Problem: there is no (<=) constraint')
             self.do_trivial_final(model)
             return
         tmp2 = [c for c in model.constraints if c.root.op == '>=']
@@ -401,10 +402,11 @@ class BasicSimplexSolver(AbstractSolver):
 
     def do_trivial_final(self, model):
         tab = Tableau(model.objective, model.constraints, [])
-        coefs = tab.coefs_obj_neg(model.objective.variables)
+        coefs_exprs = tab.coefs_obj(model.objective.variables)
+        coefs_values = {k: -v.evaluate({}) for k,v in coefs_exprs.items()}
         context = {}
         inf = float('inf')
-        for k, v in coefs.items():
+        for k, v in coefs_values.items():
             if v > 0:
                 context[k] = inf if model.objective.root.mode == 'max' else 0
             elif v < 0:
@@ -443,51 +445,106 @@ class BasicSimplexSolver(AbstractSolver):
                     self.summary['values'][v] = exprs[v].evaluate({})
 
     def do_simplex_step(self, model):
+        print(self.formatter.format_step('Simplex step'))
+
         # sanity check
         for line in self.tableau.data[1:]:
             if line[''].evaluate({}) < 0:
                 msg = 'negative RHS for basic variable?!'
                 raise RuntimeError(msg)
 
-        print(self.formatter.format_step('Simplex step'))
+        # first, look for the entering variable
         print('Searching for a variable to enter the basis')
-        candidates = [v for v in self.tableau.variables if v not in self.tableau.basis]
+        candidates = [k for k in self.tableau.variables if k not in self.tableau.basis]
+        coefs_exprs = self.tableau.coefs_obj(candidates)
         if self.formatter.opposite_obj:
-            coefs = self.tableau.coefs_obj_neg(candidates)
-            candidates = [v for v in candidates if coefs[v] > 0]
-            if not candidates:
-                print('   ... none strictly positive')
-                self.summary['status'] = 'SOLVED'
-                return
-            print('    coefs:', *(f'{v}:{round(x, 8)}' for v, x in coefs.items()))
-            var_in = max(candidates, key=lambda v: coefs[v])
-            print(f'    -> {var_in} (max positive coef)')
+            coefs_exprs = {k: Rewriter().normalize_tree(UnaryOp('-', v)) for k,v in coefs_exprs.items()}
+        coefs_values = {k: coefs_exprs[k].evaluate({}) for k in candidates}
+        print('    coefficients in objective:', end='')
+        for k in candidates:
+            e = coefs_exprs[k]
+            v = coefs_values[k]
+            if str(e) == str(v):
+                print(f' {k}:{e}', end='')
+            else:
+                print(f' {k}:({e})={round(coefs_values[k], 8)}', end='')
+        print()
+        if self.formatter.opposite_obj:
+            candidates = [v for v in candidates if coefs_values[v] > 0]
         else:
-            coefs = self.tableau.coefs_obj(candidates)
-            candidates = [v for v in candidates if coefs[v] < 0]
-            if not candidates:
+            candidates = [v for v in candidates if coefs_values[v] < 0]
+        if not candidates:
+            if self.formatter.opposite_obj:
+                print('   ... none strictly positive')
+            else:
                 print('   ... none strictly negative')
-                self.summary['status'] = 'SOLVED'
-                return
-            print('    coefs:', *(f'{v}:{round(x, 8)}' for v, x in coefs.items()))
-            var_in = min(candidates, key=lambda v: coefs[v])
-            print(f'    -> {var_in} (min negative coef)')
+            self.summary['status'] = 'SOLVED'
+            return
+        if len(candidates) == 1:
+            var_in = candidates[0]
+            if self.formatter.opposite_obj:
+                print(f'    -> {var_in} (only positive coefficient)')
+            else:
+                print(f'    -> {var_in} (only negative coefficient)')
+        elif self.formatter.opposite_obj:
+            var_in = max(candidates, key=lambda v: coefs_values[v])
+            print(f'    -> {var_in} (max positive coefficient)')
+            # var_in = None
+            # while var_in not in candidates:
+            #     var_in = input().strip()
+            # var_in = random.sample(candidates, 1)[0]
+        else:
+            var_in = min(candidates, key=lambda v: coefs_values[v])
+            print(f'    -> {var_in} (min negative coefficient)')
 
+        # then, look for the exiting variable
         print('Searching for a variable to exit the basis')
+        candidates = self.tableau.basis[:]
         col_lit = self.tableau.coefs_column('')
         col_var = self.tableau.coefs_column(var_in)
-        candidates = [v for v in self.tableau.basis if col_var[v] > 0]
-        coefs = {v: col_lit[v]/col_var[v] for v in candidates}
-        if tmp := [v for v in candidates if coefs[v] >= 0]:
-            var_out = min(tmp, key=lambda v: coefs[v])
-            print('    ratios:', *(f'{v}:{round(x, 8)}' for v, x in coefs.items()))
-            print(f'    -> {var_out} (min positive ratio)')
-        else:
-            print('    ... no strictly positive coef')
+        coefs_exprs = {k: col_var[k] for k in candidates}
+        coefs_values = {k: coefs_exprs[k].evaluate({}) for k in candidates}
+        print(f'    coefficients for {var_in}:', end='')
+        for k in candidates:
+            e = coefs_exprs[k]
+            v = coefs_values[k]
+            if str(e) == str(v):
+                print(f' {k}:{e}', end='')
+            else:
+                print(f' {k}:({e})={round(coefs_values[k], 8)}', end='')
+        print()
+        candidates = [k for k in candidates if coefs_values[k] > 0]
+        if not candidates:
+            print('    ... none strictly positive')
             self.summary['status'] = 'UNBOUNDED'
             return
+        if len(candidates) < len(self.tableau.basis):
+            print('    ... discarding any variable without a positive coefficient')
+        coefs_exprs = {k: Rewriter().normalize_tree(BinaryOp('/', col_lit[k], col_var[k])) for k in candidates}
+        coefs_values = {k: coefs_exprs[k].evaluate({}) for k in candidates}
+        print('    ratios:', end='')
+        for k in candidates:
+            e = coefs_exprs[k]
+            v = coefs_values[k]
+            if str(e) == str(v):
+                print(f' {k}:{e}', end='')
+            else:
+                print(f' {k}:({e})={round(coefs_values[k], 8)}', end='')
+        print()
+        candidates = [k for k in candidates if coefs_values[k] >= 0]
+        if not candidates:
+            print('    ... none strictly positive')
+            self.summary['status'] = 'UNBOUNDED'
+            return
+        if len(candidates) == 1:
+            var_out = candidates[0]
+            print(f'    -> {var_out} (only positive ratio)')
+        else:
+            var_out = min(candidates, key=lambda k: coefs_values[k])
+            print(f'    -> {var_out} (min positive ratio)')
 
-        print('Pivoting...')
+        # finally, pivot
+        print(f'Pivoting on ({var_in}, {var_out})...')
         self.tableau.pivot(var_in, var_out)
 
     def do_simplex_final(self, model):
@@ -495,9 +552,9 @@ class BasicSimplexSolver(AbstractSolver):
         exprs = {v: Literal(0) for v in model.variables}
         for k, v in self.summary['eliminated'].items():
             exprs[k] = Literal(v)
-        for v in self.tableau.basis:
-            row = self.tableau.row_for_basic(v)
-            exprs[v] = row['']
+        for k in self.tableau.basis:
+            row = self.tableau.coefs_row(k)
+            exprs[k] = row['']
         tmp_e = MathTree(model.objective.root.var)
         self.rewriter.normalize(tmp_e)
         if isinstance(tmp_e.root, Variable):

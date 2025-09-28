@@ -13,22 +13,22 @@ class DictCliFormatter(AbstractCliFormatter):
         # sizes for alignment
         head_just = max(*(len(v) for v in tableau.basis), len(str(tableau.objective.root.var)))
         just = {v: 0 for v in tableau.columns}
-        for line in tableau.data:
+        for row in tableau.data:
             for v in tableau.columns:
-                e = MathTree(UnaryOp('-', line[v]))
+                e = MathTree(UnaryOp('-', row[v]))
                 Rewriter().normalize(e)
-                just[v] = max(just[v], len(str(e)), len(str(line[v])))
+                just[v] = max(just[v], len(str(e)), len(str(row[v])))
         for v in tableau.columns:
             just[v] += len(v) + (1 if v else 0)
         # objective
         tmp = []
         tmp.append(str(tableau.objective.root.var).rjust(head_just))
         tmp.append(' = ')
-        line = tableau.data[0]
+        row = tableau.data[0]
         for k, v in enumerate(tableau.dict_columns):
-            if v in tableau.basis and str(line[v]) == '0':
+            if v in tableau.basis and str(row[v]) == '0':
                 continue
-            expr = MathTree(UnaryOp('-', line[v]) if v else line[v])
+            expr = MathTree(UnaryOp('-', row[v]) if v else row[v])
             Rewriter().normalize(expr)
             x = expr.evaluate({})
             s = ''
@@ -44,14 +44,14 @@ class DictCliFormatter(AbstractCliFormatter):
         out.append(''.join(tmp))
         # constraints
         for b in tableau.basis:
-            line = tableau.row_for_basic(b)
+            row = tableau.coefs_row(b)
             tmp = []
             tmp.append(str(b.rjust(head_just)))
             tmp.append(' = ')
             for k, v in enumerate(tableau.dict_columns):
                 if v in tableau.basis and str(tableau.data[0][v]) == '0':
                     continue
-                expr = MathTree(UnaryOp('-', line[v]) if v else line[v])
+                expr = MathTree(UnaryOp('-', row[v]) if v else row[v])
                 Rewriter().normalize(expr)
                 x = expr.evaluate({})
                 s = ''

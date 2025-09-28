@@ -47,12 +47,21 @@ def test_delete(mock_tableau):
     (['x2'], {'x2': 2}),
 ])
 def test_coefs_obj(mock_tableau, candidates, expected):
-    assert mock_tableau.coefs_obj(candidates) == {k: -v for k, v in expected.items()}
-    assert mock_tableau.coefs_obj_neg(candidates) == expected
+    tmp = mock_tableau.coefs_obj(candidates)
+    assert {k: -v.evaluate({}) for k,v in tmp.items()} == expected
+
+@pytest.mark.parametrize(('col', 'expected'), [
+    ('s1', {'x1': 3, 'x2': 0, 's1': 1, 's2': 0, '': 4}),
+    ('s2', {'x1': 0, 'x2': 5, 's1': 0, 's2': 1, '': 6}),
+])
+def test_coefs_row(mock_tableau, col, expected):
+    tmp = mock_tableau.coefs_row(col)
+    assert {k: v.evaluate({}) for k,v in tmp.items()} == expected
 
 @pytest.mark.parametrize(('col', 'expected'), [
     ('x1', {'s1': 3, 's2': 0}),
     ('x2', {'s1': 0, 's2': 5}),
 ])
 def test_coefs_column(mock_tableau, col, expected):
-    assert mock_tableau.coefs_column(col) == expected
+    tmp = mock_tableau.coefs_column(col)
+    assert {k: v.evaluate({}) for k,v in tmp.items()} == expected
