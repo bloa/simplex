@@ -27,7 +27,7 @@ class BigmSimplexSolver(BasicSimplexSolver):
             print('Updating objective function:')
             for var in self.artificial_variables:
                 model.objective.root.right = BinaryOp('+', model.objective.root.right, BinaryOp('*', Literal(-self.m), Variable(var)))
-            print(self.formatter.format_model(model))
+            print(self.formatter.format_objective(model))
             self.tableau = Tableau(model.objective, model.constraints, self.initial_basis)
             for var in self.artificial_variables:
                 self.tableau.pivot(var, var)
@@ -45,19 +45,18 @@ class BigmSimplexSolver(BasicSimplexSolver):
             print(self.formatter.format_section('Simplex Method'))
             for var in self.artificial_variables:
                 self.tableau.delete(var)
-            print('New basis: (removing artificial variables)')
+            print('Removing all artificial variables')
             print(self.formatter.format_tableau(self.tableau))
             print()
         else:
             self.tableau = Tableau(model.objective, model.constraints, self.initial_basis)
             print(self.formatter.format_section('Simplex Method'))
+            print('Initial basis')
+            print(self.formatter.format_tableau(self.tableau))
+            print()
         self.do_simplex_step(model)
         while self.summary['status'] == '???':
             print(self.formatter.format_tableau(self.tableau))
             print()
             self.do_simplex_step(model)
-        if self.summary['status'] == 'SOLVED':
-            print()
-            print('Final basis:')
-            print(self.formatter.format_tableau(self.tableau))
         self.do_simplex_final(model)

@@ -81,8 +81,4 @@ class TwophaseSimplexSolver(BasicSimplexSolver):
                 print(self.formatter.format_tableau(self.tableau))
                 print()
                 self.do_simplex_step(model)
-        if self.summary['status'] == '???':
-            print()
-            print('Final basis:')
-            print(self.formatter.format_tableau(self.tableau))
         self.do_simplex_final(model)

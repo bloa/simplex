@@ -38,22 +38,18 @@ def main(filename, solver, method, latex, m):
     solver.formatter = formatter
 
     # parse input
-    print(formatter.format_section('Parsing Input'))
+    print(formatter.format_section('Initialization'))
+    print(formatter.format_step(f'Raw input ({filename})'))
     with pathlib.Path.open(filename, 'r') as f:
         raw = f.read()
-    out = formatter.format_raw_model(raw)
-    if out:
-        print(f'Raw input: ({filename})')
-        print(out)
-        print()
+    print(formatter.format_raw_model(raw))
+    print()
 
     # print parsed program
+    print(formatter.format_step('Parsed program'))
     model = simplex.core.Model.parse_str(raw)
-    out = formatter.format_raw_model(str(model))
-    if out:
-        print('Parsed program:')
-        print(out)
-        print()
+    print(formatter.format_raw_model(str(model)))
+    print()
 
     # call solver
     solver.solve(model)
@@ -61,28 +57,7 @@ def main(filename, solver, method, latex, m):
     # print solver summary
     print()
     print(formatter.format_section('Summary'))
-    status = solver.summary['status']
-    print(f'Status: {status}')
-    if solver.summary['values']:
-        print('Final values:')
-        for k, v in solver.summary['values'].items():
-            e = simplex.parsing.ExprTree.from_string(str(v))
-            solver.rewriter.normalize(e)
-            v2 = e.evaluate({})
-            if str(e) == str(v2):
-                v2 = None
-            if k in solver.renames:
-                e = solver.renames[k]
-                if str(e) == str(v):
-                    print(f'    {k} = {v}')
-                elif v2:
-                    print(f'    {k} = {e} = {v} = {round(v2, 8)}')
-                else:
-                    print(f'    {k} = {e} = {v}')
-            elif v2:
-                print(f'    {k} = {v} = {round(v2, 8)}')
-            else:
-                print(f'    {k} = {v}')
+    print(formatter.format_summary(solver.summary, solver.renames))
 
     # return summary for automated testing purposes
     return solver.summary

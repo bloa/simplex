@@ -102,12 +102,12 @@ def test_latex_model(mock_model):
 def test_to_latex_tab(mock_tableau):
     expected = r"""\begin{equation*}
   \begin{array}{rrrr|rcr}
-    x1 & x2 & s1 & s2\\
+    x_1 & x_2 & s_1 & s_2\\
     \hline
-     3 &  0 &  1 &  0 &  4 & = & s1\\
-     0 &  5 &  0 &  1 &  6 & = & s2\\
+     3 &  0 &  1 &  0 &  4 & = & s_1\\
+     0 &  5 &  0 &  1 &  6 & = & s_2\\
     \hline
-     1 &  2 &  0 &  0 &  0 & = & -z\\
+     1 &  2 &  0 &  0 &  0 & = &  -z\\
   \end{array}
 \end{equation*}"""
     formatter = TableauLatexFormatter()
@@ -117,12 +117,12 @@ def test_to_latex_tab(mock_tableau):
 def test_to_latex_compact(mock_tableau):
     expected = r"""\begin{equation*}
   \begin{array}{rr|rcr}
-    x1 & x2\\
+    x_1 & x_2\\
     \hline
-     3 &  0 &  4 & = & s1\\
-     0 &  5 &  6 & = & s2\\
+     3 &  0 &  4 & = & s_1\\
+     0 &  5 &  6 & = & s_2\\
     \hline
-     1 &  2 &  0 & = & -z\\
+     1 &  2 &  0 & = &  -z\\
   \end{array}
 \end{equation*}"""
     formatter = TableauLatexFormatter()
@@ -133,11 +133,11 @@ def test_to_latex_compact(mock_tableau):
 def test_to_latex_tab_alt(mock_tableau):
     expected = r"""\begin{equation*}
   \begin{array}{rrrr|rcr}
-    x1 & x2 & s1 & s2\\
+    x_1 & x_2 & s_1 & s_2\\
     \hline
-    -1 & -2 &  0 &  0 &  0 & = &  z\\
-     3 &  0 &  1 &  0 &  4 & = & s1\\
-     0 &  5 &  0 &  1 &  6 & = & s2\\
+    -1 & -2 &  0 &  0 &  0 & = &   z\\
+     3 &  0 &  1 &  0 &  4 & = & s_1\\
+     0 &  5 &  0 &  1 &  6 & = & s_2\\
   \end{array}
 \end{equation*}"""
     formatter = TableauLatexFormatter()
@@ -147,11 +147,11 @@ def test_to_latex_tab_alt(mock_tableau):
 def test_to_latex_compact_alt(mock_tableau):
     expected = r"""\begin{equation*}
   \begin{array}{rr|rcr}
-    x1 & x2\\
+    x_1 & x_2\\
     \hline
-    -1 & -2 &  0 & = &  z\\
-     3 &  0 &  4 & = & s1\\
-     0 &  5 &  6 & = & s2\\
+    -1 & -2 &  0 & = &   z\\
+     3 &  0 &  4 & = & s_1\\
+     0 &  5 &  6 & = & s_2\\
   \end{array}
 \end{equation*}"""
     formatter = TableauLatexFormatter()
@@ -163,10 +163,10 @@ def test_to_latex_dict(mock_tableau):
     expected = r"""\begin{equation*}
   \begin{array}{|rcrcrcr|}
     \hline
-     z & = &  0 & + &  1x_1 & + &  2x_2\\
+      z & = &  0 & + &  1x_1 & + &  2x_2\\
     \hline
-    s1 & = &  4 & + & -3x_1 &   &      \\
-    s2 & = &  6 &   &       & + & -5x_2\\
+    s_1 & = &  4 & + & -3x_1 &   &      \\
+    s_2 & = &  6 &   &       & + & -5x_2\\
     \hline
   \end{array}
 \end{equation*}"""

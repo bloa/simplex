@@ -15,20 +15,20 @@ class TableauLatexFormatter(AbstractLatexFormatter):
         n = len(tableau.columns)-len(tableau.basis) if self.compact else len(tableau.columns)
         out.append(r'  \begin{array}{' + 'r'*(n-1) + '|rcr}')
         # sizes for alignment
-        head_just = max(*(len(v) for v in tableau.basis), len(str(tableau.objective.root.var)))
+        head_just = max(*(len(self.math_to_latex(v)) for v in tableau.basis), len(str(self.math_to_latex(tableau.objective.root.var))))
         just = {v: 0 for v in tableau.columns}
         for line in tableau.data:
             for v in tableau.columns:
                 t = MathTree(UnaryOp('-', line[v]))
                 Rewriter().normalize(t)
-                just[v] = max(just[v], len(str(t)), len(str(line[v])))
+                just[v] = max(just[v], len(str(self.math_to_latex(t))), len(str(self.math_to_latex(line[v]))))
         # header
         tmp = []
         for var in tableau.columns:
             if self.compact and var in tableau.basis:
                 continue
             if var:
-                tmp.append(var.rjust(just[var]))
+                tmp.append(self.math_to_latex(var).rjust(just[var]))
         out.append('    ' + ' & '.join(tmp) + r'\\')
         out.append(r'    \hline')
         # data

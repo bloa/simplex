@@ -1,4 +1,3 @@
-import random
 import re
 
 from simplex.core import AbstractSolver, Rewriter, Tableau
@@ -23,46 +22,41 @@ class BasicSimplexSolver(AbstractSolver):
         self.artificial_variables = []
         self.initial_basis = []
 
-        print(self.formatter.format_section('Preparation Steps'))
+        print(self.formatter.format_section('Preparation'))
 
-        print(self.formatter.format_step('Normalizing'))
+        print(self.formatter.format_step('Normalization'))
+        print(self.formatter.format_action('Rewriting program'))
         self.do_normalize(model)
         out = self.formatter.format_model(model)
         tmp = str(model)
         if out == tmp:
-            print('Program already normalised')
+            print(self.formatter.format_decision('skipped: program already normalized'))
         else:
-            print('Normalised program:')
             print(out)
             tmp = out
 
         if self.summary['status'] == '???':
             print()
             print(self.formatter.format_step('Canonical form'))
+            print(self.formatter.format_action('Rewriting program'))
             self.do_canonical(model)
-            out = self.formatter.format_model(model)
-            if out == tmp:
-                print('Program already in canonical form')
-            else:
-                print('Program in canonical form:')
-                print(out)
-                tmp = out
             self.do_trivial_check(model)
             out = self.formatter.format_model(model)
-            if self.summary['status'] == '???' and out != tmp:
-                print('Program in canonical form: (reordered)')
+            if out == tmp:
+                print(self.formatter.format_decision('skipped: program already in canonical form'))
+            else:
                 print(out)
                 tmp = out
 
         if self.summary['status'] == '???':
             print()
             print(self.formatter.format_step('Standard form'))
+            print(self.formatter.format_action('Rewriting program'))
             self.do_standard(model)
             out = self.formatter.format_model(model)
             if out == tmp:
-                print('Program already in standard form')
+                print(self.formatter.format_decision('skipped: program already in standard form'))
             else:
-                print('Program in standard form:')
                 print(out)
 
     def _cut_and_add(self, expr, acc, accstr):
@@ -108,7 +102,7 @@ class BasicSimplexSolver(AbstractSolver):
             if newvar in model.variables:
                 msg = f'objective variable name "{newvar}" already in use as decision variable'
                 raise RuntimeError(msg)
-            print(f'... renaming "{oldvar}" into "{newvar}"')
+            print(self.formatter.format_decision(f'renamed "{oldvar}" into "{newvar}"'))
             model.objective.rename(oldvar, newvar)
             self.renames[oldvar] = MathTree(Variable(newvar))
             model.variables.remove(oldvar)
@@ -123,7 +117,7 @@ class BasicSimplexSolver(AbstractSolver):
             if not re.match(rf'{newvar}\d+', oldvar):
                 while f'{newvar}{varid}' in model.variables:
                     varid += 1
-                print(f'... renaming "{oldvar}" into "{newvar}{varid}"')
+                print(self.formatter.format_decision(f'renamed "{oldvar}" into "{newvar}{varid}"'))
                 model.objective.rename(oldvar, f'{newvar}{varid}')
                 for tree in model.constraints:
                     tree.rename(oldvar, f'{newvar}{varid}')
@@ -181,7 +175,7 @@ class BasicSimplexSolver(AbstractSolver):
                 else:
                     varmax = min(varmax, vright/vleft) if varmax else vright/vleft
             if not in_prog:
-                print(f'Problem: {oldvar} is unused')
+                print(self.formatter.format_info(f'problem: {oldvar} is unused'))
                 model.variables.remove(oldvar)
                 if oldvar in model.variables:
                     model.variables.remove(oldvar)
@@ -191,7 +185,7 @@ class BasicSimplexSolver(AbstractSolver):
                     v.replace(oldvar, Literal(0))
                 if oldvar in self.renames:
                     del self.renames[oldvar]
-                print('... removing associated constraints')
+                print(self.formatter.format_decision('removing associated constraints'))
                 model.constraints = [c for c in model.constraints if oldvar not in c.variables]
                 continue
             # for debug: varmin <= oldvar <= varmax
@@ -203,7 +197,7 @@ class BasicSimplexSolver(AbstractSolver):
                 return tree.root
             if varmin is None:
                 if varmax is None:
-                    print(f'Problem: {oldvar} is free')
+                    print(self.formatter.format_info(f'problem: {oldvar} is free'))
                     while f'{newvar}{varid}' in model.variables:
                         varid += 1
                     _varid = varid
@@ -225,9 +219,9 @@ class BasicSimplexSolver(AbstractSolver):
                     model.variables.append(f'{newvar}{varid}')
                     model.constraints.append(BoolTree.from_string(f'{newvar}{_varid} >= 0'))
                     model.constraints.append(BoolTree.from_string(f'{newvar}{varid} >= 0'))
-                    print(f'... introduced {newvar}{_varid} and {newvar}{varid} >= 0 such that {oldvar} = {newexpr})')
+                    print(self.formatter.format_decision(f'introduced {newvar}{_varid} and {newvar}{varid} >= 0 such that {oldvar} = {newexpr})'))
                 elif varmax == 0:
-                    print(f'Problem: {oldvar} <= {to_norm(varmax)}')
+                    print(self.formatter.format_info(f'problem: {oldvar} <= {to_norm(varmax)}'))
                     while f'{newvar}{varid}' in model.variables:
                         varid += 1
                     newexpr = to_expr(f'-{newvar}{varid}')
@@ -243,9 +237,9 @@ class BasicSimplexSolver(AbstractSolver):
                         if oldvar in c.variables:
                             c.replace(Variable(oldvar), newexpr)
                     model.variables.append(f'{newvar}{varid}')
-                    print(f'... introduced {newvar}{varid} = {newexpr2} >= 0 (i.e., {oldvar} = {newexpr})')
+                    print(self.formatter.format_decision(f'introduced {newvar}{varid} = {newexpr2} >= 0 (i.e., {oldvar} = {newexpr})'))
                 elif varmax > 0:
-                    print(f'Problem: {oldvar} <= {to_norm(varmax)}')
+                    print(self.formatter.format_info(f'problem: {oldvar} <= {to_norm(varmax)}'))
                     while f'{newvar}{varid}' in model.variables:
                         varid += 1
                     newexpr = to_expr(f'-{newvar}{varid} + {to_norm(varmax)}')
@@ -261,9 +255,9 @@ class BasicSimplexSolver(AbstractSolver):
                         if oldvar in c.variables:
                             c.replace(Variable(oldvar), newexpr)
                     model.variables.append(f'{newvar}{varid}')
-                    print(f'... introduced {newvar}{varid} = {newexpr2} >= 0 (i.e., {oldvar} = {newexpr})')
+                    print(self.formatter.format_decision(f'introduced {newvar}{varid} = {newexpr2} >= 0 (i.e., {oldvar} = {newexpr})'))
                 else:
-                    print(f'Problem: {oldvar} <= {to_norm(varmax)}')
+                    print(self.formatter.format_info(f'problem: {oldvar} <= {to_norm(varmax)}'))
                     while f'{newvar}{varid}' in model.variables:
                         varid += 1
                     newexpr = to_expr(f'-{newvar}{varid} - {to_norm(-varmax)}')
@@ -279,9 +273,9 @@ class BasicSimplexSolver(AbstractSolver):
                         if oldvar in c.variables:
                             c.replace(Variable(oldvar), newexpr)
                     model.variables.append(f'{newvar}{varid}')
-                    print(f'... introduced {newvar}{varid} = {newexpr2} >= 0 (i.e., {oldvar} = {newexpr})')
+                    print(self.formatter.format_decision(f'introduced {newvar}{varid} = {newexpr2} >= 0 (i.e., {oldvar} = {newexpr})'))
             elif varmin == varmax:
-                print(f'Problem: {oldvar} == {to_norm(varmin)}')
+                print(self.formatter.format_info(f'problem: {oldvar} == {to_norm(varmin)}'))
                 newexpr = to_norm(varmin)
                 if oldvar in model.objective.variables:
                     model.objective.replace(Variable(oldvar), newexpr)
@@ -290,16 +284,16 @@ class BasicSimplexSolver(AbstractSolver):
                         c.replace(Variable(oldvar), newexpr)
                         self.rewriter.normalize(c)
                 self.summary['eliminated'][oldvar] = to_norm(varmin)
-                print(f'... eliminated {oldvar} everywhere')
+                print(self.formatter.format_decision(f'eliminated {oldvar} everywhere'))
             elif varmax and varmin > varmax:
-                print(f'Problem: {oldvar} <= {to_norm(varmax)} and {oldvar} >= {to_norm(varmin)}')
+                print(self.formatter.format_info(f'problem: {oldvar} <= {to_norm(varmax)} and {oldvar} >= {to_norm(varmin)}'))
                 self.summary['status'] = 'INFEASIBLE'
                 return
             elif varmin > 0:
                 if varmax:
-                    print(f'Problem: {to_norm(varmin)} <= {oldvar} <= {to_norm(varmax)}')
+                    print(self.formatter.format_info(f'problem: {to_norm(varmin)} <= {oldvar} <= {to_norm(varmax)}'))
                 else:
-                    print(f'Problem: {to_norm(varmin)} <= {oldvar}')
+                    print(self.formatter.format_info(f'problem: {to_norm(varmin)} <= {oldvar}'))
                 while f'{newvar}{varid}' in model.variables:
                     varid += 1
                 newexpr = to_expr(f'{newvar}{varid} + {to_norm(varmin)}')
@@ -315,12 +309,12 @@ class BasicSimplexSolver(AbstractSolver):
                     if oldvar in c.variables:
                         c.replace(Variable(oldvar), newexpr)
                 model.variables.append(f'{newvar}{varid}')
-                print(f'... introduced {newvar}{varid} = {newexpr2} >= 0 (i.e., {oldvar} = {newexpr})')
+                print(self.formatter.format_decision(f'introduced {newvar}{varid} = {newexpr2} >= 0 (i.e., {oldvar} = {newexpr})'))
             elif varmin < 0:
                 if varmax:
-                    print(f'Problem: {to_norm(varmin)} <= {oldvar} <= {to_norm(varmax)}')
+                    print(self.formatter.format_info(f'problem: {to_norm(varmin)} <= {oldvar} <= {to_norm(varmax)}'))
                 else:
-                    print(f'Problem: {to_norm(varmin)} <= {oldvar}')
+                    print(self.formatter.format_info(f'problem: {to_norm(varmin)} <= {oldvar}'))
                 while f'{newvar}{varid}' in model.variables:
                     varid += 1
                 newexpr = to_expr(f'{newvar}{varid} - {to_norm(-varmin)}')
@@ -336,7 +330,7 @@ class BasicSimplexSolver(AbstractSolver):
                     if oldvar in c.variables:
                         c.replace(Variable(oldvar), newexpr)
                 model.variables.append(f'{newvar}{varid}')
-                print(f'... introduced {newvar}{varid} = {newexpr2} >= 0 (i.e., {oldvar} = {newexpr})')
+                print(self.formatter.format_decision(f'introduced {newvar}{varid} = {newexpr2} >= 0 (i.e., {oldvar} = {newexpr})'))
 
         model.objective.variables = prefix_sort(model.objective.variables)
         self.rewriter.do_canonical(model.objective)
@@ -361,7 +355,7 @@ class BasicSimplexSolver(AbstractSolver):
                 model.constraints.append(BoolTree(BinaryOp('>=', Variable(f'{newvar}{varid}'), Literal(0))))
                 # introduce artificial variables
                 if c.root.right.evaluate({}) < 0:
-                    print('Problem: negative right-hand side')
+                    print(self.formatter.format_info('problem: negative right-hand side'))
                     newvar = self.names['artificial']
                     varid = 1
                     while f'{newvar}{varid}' in model.variables:
@@ -371,7 +365,7 @@ class BasicSimplexSolver(AbstractSolver):
                     model.constraints.append(BoolTree(BinaryOp('>=', Variable(f'{newvar}{varid}'), Literal(0))))
                     model.variables.append(f'{newvar}{varid}')
                     self.artificial_variables.append(f'{newvar}{varid}')
-                    print(f'... introduced artificial variable {newvar}{varid} >= 0')
+                    print(self.formatter.format_decision(f'introduced artificial variable {newvar}{varid} >= 0'))
                 self.initial_basis.append(f'{newvar}{varid}')
         model.objective.variables = prefix_sort(model.objective.variables)
         self.rewriter.normalize(model.objective)
@@ -381,7 +375,7 @@ class BasicSimplexSolver(AbstractSolver):
     def do_trivial_check(self, model):
         # fail on "False"
         if any(str(c) == 'False' for c in model.constraints):
-            print('Problem: there are trivially False constraints')
+            print(self.formatter.format_info('problem: there are trivially False constraints'))
             self.summary['status'] = 'INFEASIBLE'
             return
         # remove "True"
@@ -394,7 +388,7 @@ class BasicSimplexSolver(AbstractSolver):
         # reorder "<=" before ">="
         tmp1 = [c for c in model.constraints if c.root.op == '<=']
         if not tmp1:
-            print('Problem: there is no (<=) constraint')
+            print(self.formatter.format_info('problem: there is no (<=) constraint'))
             self.do_trivial_final(model)
             return
         tmp2 = [c for c in model.constraints if c.root.op == '>=']
@@ -454,97 +448,93 @@ class BasicSimplexSolver(AbstractSolver):
                 raise RuntimeError(msg)
 
         # first, look for the entering variable
-        print('Searching for a variable to enter the basis')
+        print(self.formatter.format_action('Searching for a variable to enter the basis'))
         candidates = [k for k in self.tableau.variables if k not in self.tableau.basis]
         coefs_exprs = self.tableau.coefs_obj(candidates)
         if self.formatter.opposite_obj:
             coefs_exprs = {k: Rewriter().normalize_tree(UnaryOp('-', v)) for k,v in coefs_exprs.items()}
         coefs_values = {k: coefs_exprs[k].evaluate({}) for k in candidates}
-        print('    coefficients in objective:', end='')
+        tmp = 'coefficients in objective:'
         for k in candidates:
             e = coefs_exprs[k]
             v = coefs_values[k]
-            if str(e) == str(v):
-                print(f' {k}:{e}', end='')
-            else:
-                print(f' {k}:({e})={round(coefs_values[k], 8)}', end='')
-        print()
+            tmp += f' {k}: {e}'
+            if str(e) != str(v):
+                tmp += f'={round(coefs_values[k], 8)}'
+            tmp += ' ;'
+        print(self.formatter.format_info(tmp[:-2]))
         if self.formatter.opposite_obj:
             candidates = [v for v in candidates if coefs_values[v] > 0]
         else:
             candidates = [v for v in candidates if coefs_values[v] < 0]
         if not candidates:
             if self.formatter.opposite_obj:
-                print('   ... none strictly positive')
+                print(self.formatter.format_decision('finished (no strictly positive coefficient)'))
             else:
-                print('   ... none strictly negative')
+                print(self.formatter.format_decision('finished (no strictly negative# coefficient)'))
             self.summary['status'] = 'SOLVED'
             return
         if len(candidates) == 1:
             var_in = candidates[0]
             if self.formatter.opposite_obj:
-                print(f'    -> {var_in} (only positive coefficient)')
+                print(self.formatter.format_decision(f'selected {var_in} (only positive coefficient)'))
             else:
-                print(f'    -> {var_in} (only negative coefficient)')
+                print(self.formatter.format_decision(f'selected {var_in} (only negative coefficient)'))
         elif self.formatter.opposite_obj:
             var_in = max(candidates, key=lambda v: coefs_values[v])
-            print(f'    -> {var_in} (max positive coefficient)')
-            # var_in = None
-            # while var_in not in candidates:
-            #     var_in = input().strip()
-            # var_in = random.sample(candidates, 1)[0]
+            print(self.formatter.format_decision(f'selected {var_in} (max positive coefficient)'))
         else:
             var_in = min(candidates, key=lambda v: coefs_values[v])
-            print(f'    -> {var_in} (min negative coefficient)')
+            print(self.formatter.format_decision(f'selecting {var_in} (min negative coefficient)'))
 
         # then, look for the exiting variable
-        print('Searching for a variable to exit the basis')
+        print(self.formatter.format_action('Searching for a variable to exit the basis'))
         candidates = self.tableau.basis[:]
         col_lit = self.tableau.coefs_column('')
         col_var = self.tableau.coefs_column(var_in)
         coefs_exprs = {k: col_var[k] for k in candidates}
         coefs_values = {k: coefs_exprs[k].evaluate({}) for k in candidates}
-        print(f'    coefficients for {var_in}:', end='')
+        tmp = f'coefficients for {var_in}:'
         for k in candidates:
             e = coefs_exprs[k]
             v = coefs_values[k]
-            if str(e) == str(v):
-                print(f' {k}:{e}', end='')
-            else:
-                print(f' {k}:({e})={round(coefs_values[k], 8)}', end='')
-        print()
+            tmp += f' {k}: {e}'
+            if str(e) != str(v):
+                tmp += f'={round(coefs_values[k], 8)}'
+            tmp += ' ;'
+        print(self.formatter.format_info(tmp[:-2]))
         candidates = [k for k in candidates if coefs_values[k] > 0]
         if not candidates:
-            print('    ... none strictly positive')
+            print(self.formatter.format_decision('aborted: unbounded program (none strictly positive)'))
             self.summary['status'] = 'UNBOUNDED'
             return
         if len(candidates) < len(self.tableau.basis):
-            print('    ... discarding any variable without a positive coefficient')
+            print(self.formatter.format_decision('discarded any variable without a positive coefficient'))
         coefs_exprs = {k: Rewriter().normalize_tree(BinaryOp('/', col_lit[k], col_var[k])) for k in candidates}
         coefs_values = {k: coefs_exprs[k].evaluate({}) for k in candidates}
-        print('    ratios:', end='')
+        tmp = 'ratios:'
         for k in candidates:
             e = coefs_exprs[k]
             v = coefs_values[k]
-            if str(e) == str(v):
-                print(f' {k}:{e}', end='')
-            else:
-                print(f' {k}:({e})={round(coefs_values[k], 8)}', end='')
-        print()
+            tmp += f' {k}: {e}'
+            if str(e) != str(v):
+                tmp += f'={round(coefs_values[k], 8)}'
+            tmp += ' ;'
+        print(self.formatter.format_info(tmp[:-2]))
         candidates = [k for k in candidates if coefs_values[k] >= 0]
         if not candidates:
-            print('    ... none strictly positive')
+            print(self.formatter.format_decision('aborted: unbounded program (none strictly positive)'))
             self.summary['status'] = 'UNBOUNDED'
             return
         if len(candidates) == 1:
             var_out = candidates[0]
-            print(f'    -> {var_out} (only positive ratio)')
+            print(self.formatter.format_decision(f'selected {var_out} (only positive ratio)'))
         else:
             var_out = min(candidates, key=lambda k: coefs_values[k])
-            print(f'    -> {var_out} (min positive ratio)')
+            print(self.formatter.format_decision(f'selected {var_out} (min positive ratio)'))
 
         # finally, pivot
-        print(f'Pivoting on ({var_in}, {var_out})...')
+        print(self.formatter.format_action(f'Pivoting on ({var_in}, {var_out})'))
         self.tableau.pivot(var_in, var_out)
 
     def do_simplex_final(self, model):

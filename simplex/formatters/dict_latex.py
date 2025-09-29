@@ -14,7 +14,7 @@ class DictLatexFormatter(AbstractLatexFormatter):
         out.append(r'  \begin{array}{|r' + 'cr'*(len(tableau.columns)-len(tableau.basis)) + '|}')
         out.append(r'    \hline')
         # sizes for alignment
-        head_just = max(*(len(v) for v in tableau.basis), len(str(tableau.objective.root.var)))
+        head_just = max(*(len(self.math_to_latex(v)) for v in tableau.basis), len(str(self.math_to_latex(tableau.objective.root.var))))
         just = {v: 0 for v in tableau.columns}
         for row in tableau.data:
             for v in tableau.columns:
@@ -40,17 +40,17 @@ class DictLatexFormatter(AbstractLatexFormatter):
             elif x != 0:
                 if k > 0:
                     tmp.append('+')
-                s = self.math_to_latex(expr) + self.var_to_latex(v)
+                s = self.math_to_latex(f'{expr}{v}')
             elif k > 0:
                 tmp.append(' ')
             tmp.append(s.rjust(just[v]))
         out.append('    ' + ' & '.join(tmp) + r'\\')
         out.append(r'    \hline')
-        # # constraints
+        # constraints
         for b in tableau.basis:
             row = tableau.coefs_row(b)
             tmp = []
-            tmp.append(str(b.rjust(head_just)))
+            tmp.append(str(self.math_to_latex(b).rjust(head_just)))
             tmp.append('=')
             for k, v in enumerate(tableau.dict_columns):
                 if v in tableau.basis and str(tableau.data[0][v]) == '0':
@@ -64,7 +64,7 @@ class DictLatexFormatter(AbstractLatexFormatter):
                 elif v != b and x != 0:
                     if k > 0:
                         tmp.append('+')
-                    s = self.math_to_latex(expr) + self.var_to_latex(v)
+                    s = self.math_to_latex(f'{expr}{v}')
                 elif k > 0:
                     tmp.append(' ')
                 tmp.append(s.rjust(just[v]))
