@@ -152,9 +152,8 @@ class AbstractLatexFormatter(AbstractFormatter):
     def format_summary(self, summary, renames):
         out = []
         status = summary['status']
-        out.append(fr'Status: \textbf{{{status}}}\\')
+        out.append(fr'\textbf{{{status}}}')
         if summary['values']:
-            out.append('Final values:')
             out.append(r'\begin{align*}')
             for k, v in summary['values'].items():
                 tmp = f'    {self.math_to_latex(k)} & '

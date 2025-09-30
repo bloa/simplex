@@ -60,9 +60,8 @@ class AbstractCliFormatter(AbstractFormatter):
     def format_summary(self, summary, renames):
         out = []
         status = summary['status']
-        out.append(f'Status: {self.bold(status)}')
+        out.append(f'{self.bold(status)}')
         if summary['values']:
-            out.append('Final values:')
             for k, v in summary['values'].items():
                 tmp = f'    {k}'
                 if k in renames:
