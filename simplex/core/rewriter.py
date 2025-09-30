@@ -196,6 +196,9 @@ class Rewriter:
                     if self._is_binop(node.right, '/'):
                         return binop('/', binop('*', node.left, node.right.right), node.right.left)
                 if node.op == '+':
+                    # simplify "+0"
+                    if isinstance(node.right, Literal) and node.right.value == 0:
+                        return node.left
                     # linearize "+" trees
                     if self._is_binop(node.right, '+'):
                         return binop('+', binop('+', node.left, node.right.left), node.right.right)
