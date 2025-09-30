@@ -91,12 +91,7 @@ class BasicSimplexSolver(AbstractSolver):
         model.constraints = tmp
 
         # rename objective variable
-        tmp = model.objective.root.var
-        while True:
-            if isinstance(tmp, Variable):
-                break
-            tmp = tmp.right
-        oldvar = tmp.name
+        oldvar = model.objective.root.var().name
         newvar = self.names['objective']
         if oldvar != newvar:
             if newvar in model.variables:
@@ -412,7 +407,7 @@ class BasicSimplexSolver(AbstractSolver):
 
         # final values
         exprs = {v: Literal(0) for v in model.variables}
-        tmp_e = MathTree(model.objective.root.var)
+        tmp_e = MathTree(model.objective.root.left)
         self.rewriter.normalize(tmp_e)
         if isinstance(tmp_e.root, Variable):
             obj_v = tmp_e.root.name
@@ -545,7 +540,7 @@ class BasicSimplexSolver(AbstractSolver):
         for k in self.tableau.basis:
             row = self.tableau.coefs_row(k)
             exprs[k] = row['']
-        tmp_e = MathTree(model.objective.root.var)
+        tmp_e = MathTree(model.objective.root.left)
         self.rewriter.normalize(tmp_e)
         if isinstance(tmp_e.root, Variable):
             obj_v = tmp_e.root.name
@@ -559,9 +554,9 @@ class BasicSimplexSolver(AbstractSolver):
 
         if self.summary['status'] == 'UNBOUNDED':
             if model.objective.root.mode == 'max':
-                self.summary['values'][obj_v] = '-inf' if isinstance(model.objective.root.var, UnaryOp) else 'inf'
+                self.summary['values'][obj_v] = '-inf' if isinstance(model.objective.root.left, UnaryOp) else 'inf'
             elif model.objective.root.mode == 'min':
-                self.summary['values'][obj_v] = 'inf' if isinstance(model.objective.root.var, UnaryOp) else '-inf'
+                self.summary['values'][obj_v] = 'inf' if isinstance(model.objective.root.left, UnaryOp) else '-inf'
 
         if self.summary['status'] == 'SOLVED':
             self.summary['values'][obj_v] = str(exprs[obj_v])

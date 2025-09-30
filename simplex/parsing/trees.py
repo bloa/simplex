@@ -148,7 +148,13 @@ class ObjectiveTree(LinExprTree):
         if not isinstance(self.root, Objective):
             msg = 'Invalid expression in objective function'
             raise TypeError(msg)
-        if not (isinstance(self.root.var, Variable) or (isinstance(self.root.var, UnaryOp) and self.root.var.op == '-' and isinstance(self.root.var.right, Variable))):
+        tmp = self.root.left
+        while True:
+            if isinstance(tmp, Variable):
+                break
+            if isinstance(tmp, UnaryOp) and tmp.op == '-':
+                tmp = tmp.right
+                continue
             msg = 'Invalid expression in objective function variable'
             raise SyntaxError(msg)
         def visitor(node):
@@ -156,9 +162,7 @@ class ObjectiveTree(LinExprTree):
                 msg = 'Invalid Boolean operator in numerical expression'
                 raise TypeError(msg)
         self.root.right.visit(visitor)
-        var = self.root.var
-        while not isinstance(var, Variable):
-            var = var.right
+        var = self.root.var()
         def visitor(node):
             nonlocal var
             if isinstance(node, Variable) and node.name == var.name:

@@ -23,12 +23,10 @@ class TwophaseSimplexSolver(BasicSimplexSolver):
         if self.artificial_variables:
             print(self.formatter.format_section('Phase I: Artificial Problem'))
             sub_model = Model.parse_str(str(model))
-            obj_v = sub_model.objective.root.var
-            while not isinstance(obj_v, Variable):
-                obj_v = obj_v.right
+            obj_v = sub_model.objective.root.var()
             sub_model.variables.remove(obj_v.name)
             sub_model.objective.variables.remove(obj_v.name)
-            sub_model.objective.root.var = Variable(self.names['artificial'])
+            sub_model.objective.root.left = Variable(self.names['artificial'])
             sub_model.variables.append(self.names['artificial'])
             sub_model.objective.variables.append(self.names['artificial'])
             tmp = None

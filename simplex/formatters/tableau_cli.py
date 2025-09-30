@@ -12,7 +12,7 @@ class TableauCliFormatter(AbstractCliFormatter):
     def format_tableau(self, tableau):
         out = []
         # sizes for alignment
-        head_just = max(*(len(v) for v in tableau.basis), len(str(tableau.objective.root.var)))
+        head_just = max(*(len(v) for v in tableau.basis), len(str(tableau.objective.root.left)))
         just = {v: len(v) for v in tableau.columns}
         for line in tableau.data:
             for v in tableau.columns:
@@ -47,7 +47,7 @@ class TableauCliFormatter(AbstractCliFormatter):
                     tmp.append('  ' if v else ' | ')
                 tmp.append(str(line[v]).rjust(just[v]))
             tmp.append(' = ')
-            e = tableau.objective.root.var if j == 0 else tableau.basis[j-1]
+            e = tableau.objective.root.left if j == 0 else tableau.basis[j-1]
             tmp.append(str(e).rjust(head_just))
             out.append(''.join(tmp))
         # alt: objective on top
@@ -64,7 +64,7 @@ class TableauCliFormatter(AbstractCliFormatter):
                 Rewriter().normalize(e)
                 tmp.append(str(e).rjust(just[v]))
             tmp.append(' = ')
-            e = MathTree(UnaryOp('-', tableau.objective.root.var))
+            e = MathTree(UnaryOp('-', tableau.objective.root.left))
             Rewriter().normalize(e)
             tmp.append(str(e).rjust(head_just))
             out.append(''.join(tmp))

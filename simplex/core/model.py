@@ -1,7 +1,7 @@
 import pathlib
 import re
 
-from simplex.parsing import BoolTree, ObjectiveTree, Variable
+from simplex.parsing import BoolTree, ObjectiveTree
 from simplex.utils import prefix_sort
 
 
@@ -30,9 +30,7 @@ class Model:
                     msg = 'Constraint found before objective function'
                     raise RuntimeError(msg)
                 tree = BoolTree.from_string(m.group(1))
-                var = model.objective.root.var
-                while not isinstance(var, Variable):
-                    var = var.right
+                var = model.objective.root.var()
                 if var.name in tree.variables:
                     msg = 'Constraint uses objective as variable'
                     raise RuntimeError(msg)

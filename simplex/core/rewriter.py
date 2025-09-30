@@ -89,17 +89,17 @@ class Rewriter:
                     return binop('/', Literal(int(10**n*node.value)), Literal(10**n))
 
             case Objective():
-                if isinstance(node.var, BinaryOp):
-                    if isinstance(node.var.left, Literal):
-                        if node.var.left.value > 0:
-                            return Objective(node.mode, node.var.right, binop('/', node.right, node.var.left))
-                        if node.var.left.value != -1:
-                            return Objective(node.mode, unaop('-', node.var.right), binop('/', node.right, node.var.left))
-                    elif self._is_binop(node.var.left, '/'):
-                        if node.var.left.left.value > 0:
-                            return Objective(node.mode, node.var.right, binop('*', binop('/', node.var.left.right, node.var.left.left), node.right))
-                        if node.var.left.left.value != -1:
-                            return Objective(node.mode, unaop('-', node.var.right), binop('*', binop('/', node.var.left.right, node.var.left.left), node.right))
+                if isinstance(node.left, BinaryOp):
+                    if isinstance(node.left.left, Literal):
+                        if node.left.left.value > 0:
+                            return Objective(node.mode, node.left.right, binop('/', node.right, node.left.left))
+                        if node.left.left.value != -1:
+                            return Objective(node.mode, unaop('-', node.left.right), binop('/', node.right, node.left.left))
+                    elif self._is_binop(node.left.left, '/'):
+                        if node.left.left.left.value > 0:
+                            return Objective(node.mode, node.left.right, binop('*', binop('/', node.left.left.right, node.left.left.left), node.right))
+                        if node.left.left.left.value != -1:
+                            return Objective(node.mode, unaop('-', node.left.right), binop('*', binop('/', node.left.left.right, node.left.left.left), node.right))
 
             case UnaryOp():
                 # rewrite expression lists
@@ -364,7 +364,7 @@ class Rewriter:
         match node:
             case Objective():
                 if node.mode == 'min':
-                    return Objective('max', unaop('-', node.var), unaop('-', node.right))
+                    return Objective('max', unaop('-', node.left), unaop('-', node.right))
             case BinaryOp():
                 if node.op == '==':
                     return binop('and', binop('<=', node.left, node.right), binop('>=', node.left, node.right))

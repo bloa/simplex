@@ -98,10 +98,7 @@ class AbstractLatexFormatter(AbstractFormatter):
 
     def format_objective(self, model):
         variables = model.variables[:]
-        obj_var = model.objective.root.var
-        while not isinstance(obj_var, Variable):
-            obj_var = obj_var.right
-        variables.remove(obj_var.name)
+        variables.remove(model.objective.root.var().name)
         out = []
         out.append(r'\begin{equation*}')
         out.append(r'  \arraycolsep=0.3em')
@@ -114,16 +111,13 @@ class AbstractLatexFormatter(AbstractFormatter):
 
     def format_model(self, model):
         variables = model.variables[:]
-        obj_var = model.objective.root.var
-        while not isinstance(obj_var, Variable):
-            obj_var = obj_var.right
-        variables.remove(obj_var.name)
+        variables.remove(model.objective.root.var().name)
         out = []
         out.append(r'\begin{equation*}')
         out.append(r'  \arraycolsep=0.3em')
         out.append(r'  \begin{array}{rr' + 'cr'*len(variables) + '}')
         tmp = self._aux(model.objective.root.right, variables)
-        out.append(r'    \text{' + model.objective.root.mode + 'imise' + '} & ' + self.math_to_latex(str(model.objective.root.var)) + ' = ' + ' & '.join(tmp) + r'\\')
+        out.append(r'    \text{' + model.objective.root.mode + 'imise' + '} & ' + self.math_to_latex(str(model.objective.root.left)) + ' = ' + ' & '.join(tmp) + r'\\')
         neg_var = []
         pos_var = []
         for k, c in enumerate(model.constraints):

@@ -172,23 +172,29 @@ class BinaryOp(Expr):
         return visitor(self.__class__(self.op, left, right))
 
 class Objective(Expr):
-    def __init__(self, mode, var, right):
+    def __init__(self, mode, left, right):
         self.mode = mode
-        self.var = var
+        self.left = left
         self.right = right
 
     def __str__(self):
-        return f'{self.mode} {self.var} = {self.right}'
+        return f'{self.mode} {self.left} = {self.right}'
+
+    def var(self):
+        tmp = self.left
+        while not isinstance(tmp, Variable):
+            tmp = tmp.right
+        return tmp
 
     def evaluate(self, context):
         return self.right.evaluate(context)
 
     def visit(self, visitor):
-        self.var.visit(visitor)
+        self.left.visit(visitor)
         self.right.visit(visitor)
         visitor(self)
 
     def rewrite(self, visitor):
-        var = self.var.rewrite(visitor)
+        var = self.left.rewrite(visitor)
         right = self.right.rewrite(visitor)
         return visitor(self.__class__(self.mode, var, right))

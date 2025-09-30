@@ -14,7 +14,7 @@ class DictLatexFormatter(AbstractLatexFormatter):
         out.append(r'  \begin{array}{|r' + 'cr'*(len(tableau.columns)-len(tableau.basis)) + '|}')
         out.append(r'    \hline')
         # sizes for alignment
-        head_just = max(*(len(self.math_to_latex(v)) for v in tableau.basis), len(str(self.math_to_latex(tableau.objective.root.var))))
+        head_just = max(*(len(self.math_to_latex(v)) for v in tableau.basis), len(str(self.math_to_latex(tableau.objective.root.left))))
         just = {v: 0 for v in tableau.columns}
         for row in tableau.data:
             for v in tableau.columns:
@@ -25,7 +25,7 @@ class DictLatexFormatter(AbstractLatexFormatter):
             just[v] += len(v) + (1 if v else 0)
         # objective
         tmp = []
-        tmp.append(str(tableau.objective.root.var).rjust(head_just))
+        tmp.append(str(tableau.objective.root.left).rjust(head_just))
         tmp.append('=')
         row = tableau.data[0]
         for k, v in enumerate(tableau.dict_columns):

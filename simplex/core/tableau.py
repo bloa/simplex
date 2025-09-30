@@ -8,10 +8,7 @@ from .rewriter import Rewriter
 class Tableau:
     def __init__(self, objective, constraints, basis):
         tmp = objective.variables
-        obj_v = objective.root.var
-        while not isinstance(obj_v, Variable):
-            obj_v = obj_v.right
-        tmp.remove(obj_v.name)
+        tmp.remove(objective.root.var().name)
         for c in constraints:
             tmp += c.variables
         self.variables = prefix_unique(tmp)

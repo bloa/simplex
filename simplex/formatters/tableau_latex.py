@@ -15,7 +15,7 @@ class TableauLatexFormatter(AbstractLatexFormatter):
         n = len(tableau.columns)-len(tableau.basis) if self.compact else len(tableau.columns)
         out.append(r'  \begin{array}{' + 'r'*(n-1) + '|rcr}')
         # sizes for alignment
-        head_just = max(*(len(self.math_to_latex(v)) for v in tableau.basis), len(str(self.math_to_latex(tableau.objective.root.var))))
+        head_just = max(*(len(self.math_to_latex(v)) for v in tableau.basis), len(str(self.math_to_latex(tableau.objective.root.left))))
         just = {v: 0 for v in tableau.columns}
         for line in tableau.data:
             for v in tableau.columns:
@@ -42,7 +42,7 @@ class TableauLatexFormatter(AbstractLatexFormatter):
                     continue
                 tmp.append(self.math_to_latex(line[var]).rjust(just[var]))
             tmp.append('=')
-            e = tableau.objective.root.var if j == 0 else tableau.basis[j-1]
+            e = tableau.objective.root.left if j == 0 else tableau.basis[j-1]
             tmp.append(self.math_to_latex(e).rjust(head_just))
             out.append('    ' + ' & '.join(tmp) + r'\\')
         # alt: objective on top
@@ -57,7 +57,7 @@ class TableauLatexFormatter(AbstractLatexFormatter):
                 Rewriter().normalize(e)
                 tmp.append(self.math_to_latex(e).rjust(just[var]))
             tmp.append('=')
-            e = MathTree(UnaryOp('-', tableau.objective.root.var))
+            e = MathTree(UnaryOp('-', tableau.objective.root.left))
             Rewriter().normalize(e)
             tmp.append(self.math_to_latex(e).rjust(head_just))
             out.append('    ' + ' & '.join(tmp) + r'\\')

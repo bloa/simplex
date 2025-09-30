@@ -11,7 +11,7 @@ class DictCliFormatter(AbstractCliFormatter):
     def format_tableau(self, tableau):
         out = []
         # sizes for alignment
-        head_just = max(*(len(v) for v in tableau.basis), len(str(tableau.objective.root.var)))
+        head_just = max(*(len(v) for v in tableau.basis), len(str(tableau.objective.root.left)))
         just = {v: 0 for v in tableau.columns}
         for row in tableau.data:
             for v in tableau.columns:
@@ -22,7 +22,7 @@ class DictCliFormatter(AbstractCliFormatter):
             just[v] += len(v) + (1 if v else 0)
         # objective
         tmp = []
-        tmp.append(str(tableau.objective.root.var).rjust(head_just))
+        tmp.append(str(tableau.objective.root.left).rjust(head_just))
         tmp.append(' = ')
         row = tableau.data[0]
         for k, v in enumerate(tableau.dict_columns):
