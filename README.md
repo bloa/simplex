@@ -58,4 +58,3 @@ Contributions are welcome via pull requests.
 
 Planned improvements include:
 - interactive mode for selecting pivots
-- support for solving through the dual problem

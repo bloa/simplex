@@ -2,7 +2,7 @@ import pathlib
 import re
 
 from simplex.parsing import BoolTree, ObjectiveTree
-from simplex.utils import prefix_sort
+from simplex.utils import prefix_unique
 
 
 class Model:
@@ -23,7 +23,7 @@ class Model:
                     msg = 'Multiple objective function found'
                     raise RuntimeError(msg)
                 model.objective = ObjectiveTree.from_string(m.group(1))
-                variables = set(model.objective.variables)
+                variables = model.objective.variables[:]
                 continue
             if m := re.search(r'^([^#]*)(#|$)', line):
                 if model.objective is None:
@@ -35,12 +35,12 @@ class Model:
                     msg = 'Constraint uses objective as variable'
                     raise RuntimeError(msg)
                 model.constraints.append(tree)
-                variables.update(tree.variables)
+                variables.extend(tree.variables)
                 continue
         if model.objective is None:
             msg = 'No objective function found'
             raise RuntimeError(msg)
-        model.variables = prefix_sort(variables)
+        model.variables = prefix_unique(variables)
         return model
 
     def __init__(self):

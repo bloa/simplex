@@ -24,7 +24,7 @@ class AbstractLatexFormatter(AbstractFormatter):
         s = str(e)
         s = re.sub(r'<=', r'\\leq', s)
         s = re.sub(r'>=', r'\\geq', s)
-        s = re.sub(r'(\w+)(\d+)', r'\1_\2', s)
+        s = re.sub(r'([a-z]+)(\d+)', r'\1_\2', s)
         s = re.sub(r'(-?\d+)/(\d+)', r'(\\nicefrac{\1}{\2})', s)
         return s
 

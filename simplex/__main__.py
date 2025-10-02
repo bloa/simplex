@@ -8,7 +8,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
 import simplex
 
 
-def main(filename, solver, method, latex, m):
+def main(filename, solver, from_dual, to_dual, method, latex, m):
     # resolve CLI parameters
     match solver:
         case 'bigm':
@@ -36,6 +36,8 @@ def main(filename, solver, method, latex, m):
             else:
                 formatter = simplex.formatters.DictCliFormatter()
     solver.formatter = formatter
+    solver.convert_from_dual = from_dual
+    solver.convert_to_dual = to_dual
 
     # parse input
     print(formatter.format_section('Initialization'))
@@ -47,12 +49,12 @@ def main(filename, solver, method, latex, m):
 
     # print parsed program
     print(formatter.format_step('Parsed program'))
-    model = simplex.core.Model.parse_str(raw)
-    print(formatter.format_raw_model(str(model)))
+    solver.model = simplex.core.Model.parse_str(raw)
+    print(formatter.format_raw_model(str(solver.model)))
     print()
 
     # call solver
-    solver.solve(model)
+    solver.solve()
 
     # print solver summary
     print()
@@ -67,9 +69,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Simple Simplex Solver')
     parser.add_argument('--program', type=pathlib.Path, required=True)
     parser.add_argument('--solver', type=str, default='bigm', choices={'bigm', 'twophase', '2phase'})
+    parser.add_argument('--from_dual', action='store_true')
+    parser.add_argument('--to_dual', action='store_true')
     parser.add_argument('--method', type=str, default='dictionary', choices={'tableau', 'compact', 'tableau_alt', 'compact_alt', 'dict', 'dictionary'})
     parser.add_argument('--latex', action='store_true')
     parser.add_argument('--m', type=int, default=3628800)
     args = parser.parse_args()
 
-    main(args.program, args.solver, args.method, args.latex, args.m)
+    main(args.program, args.solver, args.from_dual, args.to_dual, args.method, args.latex, args.m)

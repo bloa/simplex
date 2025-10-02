@@ -48,6 +48,7 @@ class Tableau:
     @staticmethod
     def aux_data(tree, columns):
         acc = {v: Literal(0) for v in columns}
+        acc[''] = Literal(0)
         def visitor(node):
             nonlocal acc
             if isinstance(node, BinaryOp) and node.op == '*':
@@ -58,7 +59,6 @@ class Tableau:
                     acc[''] = Literal(-node.right.value)
                 else:
                     acc[node.right.name] = Literal(-1)
-                    acc[''] = Literal(0)
             if isinstance(node, Variable):
                 acc[node.name] = Literal(1)
             if isinstance(node, Literal):
@@ -73,18 +73,12 @@ class Tableau:
     def coefs_obj(self, candidates):
         return {k: self.data[0][k] for k in candidates}
 
-    def coefs_obj_old(self, candidates):
-        return {k: self.data[0][k].evaluate({}) for k in candidates}
-
     def coefs_row(self, row):
         assert row in self.basis
         return self.data[self.basis.index(row)+1]
 
     def coefs_column(self, col):
         return {v: self.data[k+1][col] for k, v in enumerate(self.basis)}
-
-    def coefs_column_old(self, col):
-        return {v: self.data[k+1][col].evaluate({}) for k, v in enumerate(self.basis)}
 
     @staticmethod
     def aux_art_coefs(row_out, candidates):

@@ -195,6 +195,6 @@ class Objective(Expr):
         visitor(self)
 
     def rewrite(self, visitor):
-        var = self.left.rewrite(visitor)
+        left = self.left.rewrite(visitor)
         right = self.right.rewrite(visitor)
-        return visitor(self.__class__(self.mode, var, right))
+        return visitor(self.__class__(self.mode, left, right))
