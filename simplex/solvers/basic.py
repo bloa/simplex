@@ -36,7 +36,7 @@ class BasicSimplexSolver(AbstractSolver):
 
         print(self.formatter.format_step('Normalization'))
         print(self.formatter.format_action('Rewriting program'))
-        tmp = str(self.model)
+        tmp = self.formatter.format_raw_model(str(self.model))
         self.do_normalize(rename=True)
         out = self.formatter.format_model(self.model)
         if out == tmp:
